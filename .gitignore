@@ -1,0 +1,34 @@
+# Artefactos de compilacao
+/wificontroller
+/wificontroller.exe
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Base de dados local
+/data/*.db
+/data/*.db-wal
+/data/*.db-shm
+
+# Configuracao local (pode conter segredos)
+/config/.env
+/config/config.env
+
+# Logs
+*.log
+
+# Frontend
+/web/frontend/node_modules/
+/web/frontend/dist/
+/web/frontend/.vite/
+/web/frontend/*.local
+*.tsbuildinfo
+
+# Sistema operativo / editores
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
