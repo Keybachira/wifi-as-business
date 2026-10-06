@@ -58,36 +58,36 @@ interface GenForm {
 }
 
 const NAV: NavItem[] = [
-  { section: "Operate" },
-  { id: "overview", label: "Overview", icon: "overview" },
-  { id: "live", label: "Live Users", icon: "live" },
-  { id: "vouchers", label: "Vouchers", icon: "ticket" },
-  { id: "plans", label: "Plans", icon: "plans" },
-  { section: "Infrastructure" },
-  { id: "networks", label: "Networks", icon: "network" },
-  { id: "devices", label: "Devices", icon: "devices" },
-  { id: "sessions", label: "Sessions", icon: "sessions" },
-  { id: "analytics", label: "Analytics", icon: "analytics" },
-  { section: "Access" },
+  { section: "Operação" },
+  { id: "overview", label: "Resumo", icon: "overview" },
+  { id: "live", label: "Clientes Ligados", icon: "live" },
+  { id: "vouchers", label: "Vales", icon: "ticket" },
+  { id: "plans", label: "Planos", icon: "plans" },
+  { section: "Infraestrutura" },
+  { id: "networks", label: "Redes", icon: "network" },
+  { id: "devices", label: "Equipamentos", icon: "devices" },
+  { id: "sessions", label: "Sessões", icon: "sessions" },
+  { id: "analytics", label: "Análises", icon: "analytics" },
+  { section: "Acesso" },
   { id: "portal", label: "Portal", icon: "portal" },
-  { id: "users", label: "Users", icon: "users" },
-  { id: "team", label: "Team", icon: "team" },
-  { id: "settings", label: "Settings", icon: "settings" },
+  { id: "users", label: "Utilizadores", icon: "users" },
+  { id: "team", label: "Equipa", icon: "team" },
+  { id: "settings", label: "Definições", icon: "settings" },
 ]
 
 const MOBILE_NAV: { id: PageId; label: string; icon: string }[] = [
-  { id: "overview", label: "Home", icon: "overview" },
-  { id: "live", label: "Live", icon: "live" },
-  { id: "vouchers", label: "Vouchers", icon: "ticket" },
-  { id: "analytics", label: "Analytics", icon: "analytics" },
-  { id: "settings", label: "More", icon: "settings" },
+  { id: "overview", label: "Início", icon: "overview" },
+  { id: "live", label: "Ligados", icon: "live" },
+  { id: "vouchers", label: "Vales", icon: "ticket" },
+  { id: "analytics", label: "Análises", icon: "analytics" },
+  { id: "settings", label: "Mais", icon: "settings" },
 ]
 
 function greeting() {
   const h = new Date().getHours()
-  if (h < 12) return "Good morning"
-  if (h < 18) return "Good afternoon"
-  return "Good evening"
+  if (h < 12) return "Bom dia"
+  if (h < 18) return "Boa tarde"
+  return "Boa noite"
 }
 
 let toastSeq = 0
@@ -103,21 +103,21 @@ export default function App() {
   const [live, setLive] = useState<LiveUser[]>(liveSeed)
   const [vouchers, setVouchers] = useState<Voucher[]>(vouchersSeed)
   const [plans, setPlans] = useState<Plan[]>(plansSeed)
-  const [voucherFilter, setVoucherFilter] = useState<string>("All")
+  const [voucherFilter, setVoucherFilter] = useState<string>("Todos")
   const [genOpen, setGenOpen] = useState(false)
-  const [genForm, setGenForm] = useState<GenForm>({ qty: 100, plan: "1 Hour — 100 Kz", speed: "5 Mbps", data: "1 GB", devices: 1, expiration: "30 days" })
+  const [genForm, setGenForm] = useState<GenForm>({ qty: 100, plan: "1 Hora — 100", speed: "5 Mbps", data: "1 GB", devices: 1, expiration: "30 dias" })
   const [genDone, setGenDone] = useState<number | null>(null)
   const [planOpen, setPlanOpen] = useState(false)
   const [device, setDevice] = useState<Device | null>(null)
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
-  const [range, setRange] = useState<string>("Today")
+  const [range, setRange] = useState<string>("Hoje")
   const [portal, setPortal] = useState({
-    name: "WiFi do Kimbo",
-    message: "Enter your voucher",
+    name: "WiFi Controller",
+    message: "Introduza o seu código de acesso",
     bg: "#0b1220",
     color: "#3b82f6",
-    terms: "By connecting you accept the terms of use of this network.",
-    success: "You are online. Enjoy your session.",
+    terms: "Ao ligar-se aceita os termos de utilização desta rede.",
+    success: "Está ligado. Aproveite a sua sessão.",
   })
   const [notifyOpen, setNotifyOpen] = useState(false)
 
@@ -153,13 +153,13 @@ export default function App() {
 
   function disconnectUser(u: LiveUser) {
     setConfirm({
-      title: "Disconnect user",
-      body: `Disconnect ${u.user} from the network? The session will end immediately.`,
+      title: "Desligar cliente",
+      body: `Desligar ${u.user} da rede? A sessão termina imediatamente.`,
       danger: true,
-      action: "Disconnect",
+      action: "Desligar",
       onConfirm: () => {
         setLive((list) => list.filter((x) => x.id !== u.id))
-        toast(`${u.user} disconnected`)
+        toast(`${u.user} desligado`)
         setConfirm(null)
       },
     })
@@ -167,27 +167,27 @@ export default function App() {
 
   function blockUser(u: LiveUser) {
     setConfirm({
-      title: "Block device",
-      body: `Block ${u.user} (${u.mac}) from this network?`,
+      title: "Bloquear equipamento",
+      body: `Bloquear ${u.user} (${u.mac}) nesta rede?`,
       danger: true,
-      action: "Block",
+      action: "Bloquear",
       onConfirm: () => {
         setLive((list) => list.filter((x) => x.id !== u.id))
-        toast(`${u.user} blocked`, "warn")
+        toast(`${u.user} bloqueado`, "warn")
         setConfirm(null)
       },
     })
   }
 
   function extendUser(u: LiveUser) {
-    setLive((list) => list.map((x) => (x.id === u.id ? { ...x, remaining: "Extended +1h" } : x)))
-    toast(`Session extended for ${u.user}`)
+    setLive((list) => list.map((x) => (x.id === u.id ? { ...x, remaining: "Estendida +1h" } : x)))
+    toast(`Sessão estendida para ${u.user}`)
   }
 
   function generateVouchers() {
     const n = Number(genForm.qty) || 0
     if (n < 1 || n > 1000) {
-      toast("Quantity must be between 1 and 1000", "error")
+      toast("A quantidade deve estar entre 1 e 1000", "error")
       return
     }
     const codes = generateCodes(n)
@@ -195,18 +195,18 @@ export default function App() {
     const created: Voucher[] = codes.map((code) => ({
       code,
       plan: planName,
-      duration: planName.includes("Hour") ? planName : planName,
-      device: `${genForm.devices} device${genForm.devices > 1 ? "s" : ""}`,
-      created: "Today",
-      status: "Available",
+      duration: planName.includes("Hora") ? planName : planName,
+      device: `${genForm.devices} dispositivo${genForm.devices > 1 ? "s" : ""}`,
+      created: "Hoje",
+      status: "Disponível",
     }))
     setVouchers((v) => [...created, ...v])
     setGenDone(n)
-    toast(`${n} vouchers generated successfully.`)
+    toast(`${n} vales gerados com sucesso.`)
   }
 
   const filteredVouchers = useMemo(() => {
-    if (voucherFilter === "All") return vouchers
+    if (voucherFilter === "Todos") return vouchers
     return vouchers.filter((v) => v.status === voucherFilter)
   }, [vouchers, voucherFilter])
 
@@ -217,6 +217,28 @@ export default function App() {
 
   const aps = devicesSeed.filter((d) => d.type === "Access Point")
   const onlineAps = aps.filter((d) => d.status === "Online").length
+  const traduzir = (t: string) =>
+    ({
+      Online: "Ligado",
+      Offline: "Desligado",
+      Live: "Ativa",
+      Ended: "Terminada",
+      Available: "Disponível",
+      Active: "Ativo",
+      Expired: "Expirado",
+      Revoked: "Revogado",
+      Operator: "Operador",
+      Support: "Suporte",
+      Owner: "Responsável",
+    } as Record<string, string>)[t] ?? t
+  const traduzirTipo = (t: string) =>
+    ({
+      Router: "Router",
+      Switch: "Switch",
+      "Access Point": "Ponto de Acesso",
+      Firewall: "Firewall",
+      Internet: "Internet",
+    } as Record<string, string>)[t] ?? t
 
   return (
     <div className="app">
@@ -230,10 +252,10 @@ export default function App() {
             <div className="brand-name">WiFi Controller</div>
           </div>
           <div className="system-online">
-            <span className="dot" /> System Online
+            <span className="dot" /> Sistema Online
           </div>
         </div>
-        <nav className="nav" aria-label="Primary">
+        <nav className="nav" aria-label="Principal">
           {NAV.map((item, i) =>
             "section" in item ? (
               <div className="nav-section" key={item.section + i}>
@@ -261,15 +283,15 @@ export default function App() {
               const i = networks.findIndex((n) => n.id === network.id)
               const next = networks[(i + 1) % networks.length]
               setNetwork(next)
-              toast(`Switched to ${next.name}`)
+              toast(`Mudou para ${next.name}`)
             }}
-            aria-label="Select network"
+            aria-label="Selecionar rede"
           >
             <span>{network.name}</span>
             <SvgIcon name="chevron" size={14} />
           </button>
           <button className="select-like" onClick={() => go("settings")}>
-            <span>Settings</span>
+            <span>Definições</span>
             <SvgIcon name="settings" size={14} />
           </button>
         </div>
@@ -278,25 +300,25 @@ export default function App() {
       <div className="main">
         <header className="topbar">
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <button className="icon-btn menu-btn" onClick={() => setSidebarOpen(true)} aria-label="Open menu">
+            <button className="icon-btn menu-btn" onClick={() => setSidebarOpen(true)} aria-label="Abrir menu">
               <SvgIcon name="menu" />
             </button>
             <div className="crumb">
-              Network <span className="crumb-sep">/</span> <strong>{network.name}</strong>
+              Rede <span className="crumb-sep">/</span> <strong>{network.name}</strong>
             </div>
           </div>
           <div className="top-actions">
-            <button className="search-chip" onClick={() => setCmdOpen(true)} aria-label="Search">
+            <button className="search-chip" onClick={() => setCmdOpen(true)} aria-label="Pesquisar">
               <SvgIcon name="search" size={14} />
-              Search
+              Pesquisar
               <kbd>⌘K</kbd>
             </button>
-            <button className="icon-btn notif" aria-label="Notifications" onClick={() => setNotifyOpen((v) => !v)}>
+            <button className="icon-btn notif" aria-label="Notificações" onClick={() => setNotifyOpen((v) => !v)}>
               <SvgIcon name="bell" />
             </button>
             <div className="mikrotik">
               <span className="dot" />
-              <span className="label">MikroTik Connected</span>
+              <span className="label">MikroTik Ligado</span>
             </div>
             <div className="avatar sm" title={company.name}>
               {company.initials}
@@ -306,11 +328,11 @@ export default function App() {
 
         {notifyOpen && (
           <div className="card" style={{ position: "absolute", right: 28, top: 56, width: 300, zIndex: 50, padding: 12 }}>
-            <strong style={{ fontSize: 13 }}>Notifications</strong>
+            <strong style={{ fontSize: 13 }}>Notificações</strong>
             <div style={{ marginTop: 10, fontSize: 12.5, color: "var(--text-muted)", display: "flex", flexDirection: "column", gap: 10 }}>
-              <div>AP-03 Patio went offline 2h ago</div>
-              <div>42 min remaining on Guest-044</div>
-              <div>Daily revenue crossed 100,000 Kz</div>
+              <div>AP-03 Pátio desligou-se há 2h</div>
+              <div>42 min restantes para Guest-044</div>
+              <div>Receita do dia passou 100,000</div>
             </div>
           </div>
         )}
@@ -321,11 +343,11 @@ export default function App() {
               <div className="page-head">
                 <div>
                   <h1 className="page-title">{greeting()}, Admin</h1>
-                  <p className="page-sub">Here's what's happening on your network today.</p>
+                  <p className="page-sub">Eis o que se passa na sua rede hoje.</p>
                 </div>
                 <div className="head-actions">
                   <button className="btn primary" onClick={() => { setGenOpen(true); setGenDone(null) }}>
-                    <SvgIcon name="plus" size={14} /> Create Voucher
+                    <SvgIcon name="plus" size={14} /> Criar Vale
                   </button>
                 </div>
               </div>
@@ -341,7 +363,7 @@ export default function App() {
                       </div>
                       <div className="kpi-value">{k.value}</div>
                       <div className="kpi-foot">
-                        <span className={`delta ${k.up ? "up" : "down"}`}>{k.delta} vs yesterday</span>
+                        <span className={`delta ${k.up ? "up" : "down"}`}>{k.delta} vs ontem</span>
                         <Sparkline series={k.series} color={k.up ? "#22c55e" : "#ef4444"} />
                       </div>
                     </article>
@@ -351,42 +373,42 @@ export default function App() {
               <div className="split">
                 <section className="card panel">
                   <div className="panel-head">
-                    <h2 className="panel-title">Bandwidth Usage</h2>
+                    <h2 className="panel-title">Uso de Banda</h2>
                     <div className="legend">
-                      <span><i className="swatch" style={{ background: "#3b82f6" }} /> Download</span>
-                      <span><i className="swatch" style={{ background: "#22c55e" }} /> Upload</span>
+                      <span><i className="swatch" style={{ background: "#3b82f6" }} /> Descarga</span>
+                      <span><i className="swatch" style={{ background: "#22c55e" }} /> Carregamento</span>
                     </div>
                   </div>
                   <AreaChart data={bandwidth} hover={hoverBw} setHover={setHoverBw} />
                 </section>
                 <section className="card panel">
                   <div className="panel-head">
-                    <h2 className="panel-title">Network Status</h2>
+                    <h2 className="panel-title">Estado da Rede</h2>
                   </div>
                   <div className="status-list">
                     <div className="status-row">
                       <div className="status-left">Internet</div>
-                      <div className="status-right"><span className="dot" /> Operational</div>
+                      <div className="status-right"><span className="dot" /> Operacional</div>
                     </div>
                     <div className="status-row">
                       <div className="status-left">Router</div>
-                      <div className="status-right"><span className="dot" /> Connected</div>
+                      <div className="status-right"><span className="dot" /> Ligado</div>
                     </div>
                     <div className="status-row">
-                      <div className="status-left">Access Points</div>
-                      <div className="status-right"><span className={`dot ${onlineAps === aps.length ? "" : "warn"}`} /> {onlineAps} / {aps.length} Online</div>
+                      <div className="status-left">Pontos de Acesso</div>
+                      <div className="status-right"><span className={`dot ${onlineAps === aps.length ? "" : "warn"}`} /> {onlineAps} / {aps.length} Ligados</div>
                     </div>
                     <div className="status-row">
                       <div className="status-left">RADIUS</div>
-                      <div className="status-right"><span className="dot" /> Operational</div>
+                      <div className="status-right"><span className="dot" /> Operacional</div>
                     </div>
                   </div>
                 </section>
               </div>
               <section className="card">
                 <div className="panel panel-head" style={{ marginBottom: 0 }}>
-                  <h2 className="panel-title">Live Users</h2>
-                  <button className="btn ghost sm" onClick={() => go("live")}>View all</button>
+                  <h2 className="panel-title">Clientes Ligados</h2>
+                  <button className="btn ghost sm" onClick={() => go("live")}>Ver todos</button>
                 </div>
                 <UserTable users={live.slice(0, 5)} onView={(u) => toast(`Session ${u.user} · ${u.ip}`)} onDisconnect={disconnectUser} onBlock={blockUser} onExtend={extendUser} />
               </section>
@@ -397,14 +419,14 @@ export default function App() {
             <>
               <div className="page-head">
                 <div>
-                  <h1 className="page-title">Live Users</h1>
-                  <p className="page-sub">{live.length} clients currently authenticated on {network.name}.</p>
+                  <h1 className="page-title">Clientes Ligados</h1>
+                  <p className="page-sub">{live.length} clientes atualmente autenticados em {network.name}.</p>
                 </div>
               </div>
               {live.length === 0 ? (
                 <div className="card empty">
-                  <h3>No live users</h3>
-                  <p>When clients authenticate, they will appear here.</p>
+                  <h3>Nenhum cliente ligado</h3>
+                  <p>Quando os clientes se autenticarem, aparecerão aqui.</p>
                 </div>
               ) : (
                 <div className="card">
@@ -418,17 +440,17 @@ export default function App() {
             <>
               <div className="page-head">
                 <div>
-                  <h1 className="page-title">Vouchers</h1>
-                  <p className="page-sub">Create, manage and monitor access vouchers.</p>
+                  <h1 className="page-title">Vales</h1>
+                  <p className="page-sub">Criar, gerir e acompanhar os vales de acesso.</p>
                 </div>
                 <div className="head-actions">
-                  <button className="btn primary" onClick={() => { setGenOpen(true); setGenDone(null) }}>Generate vouchers</button>
-                  <button className="btn" onClick={() => toast("Export started")}>Export</button>
-                  <button className="btn" onClick={() => toast("Sent to printer")}><SvgIcon name="print" size={14} /> Print</button>
+                  <button className="btn primary" onClick={() => { setGenOpen(true); setGenDone(null) }}>Gerar vales</button>
+                  <button className="btn" onClick={() => toast("Exportação iniciada")}>Exportar</button>
+                  <button className="btn" onClick={() => toast("Enviado para a impressora")}><SvgIcon name="print" size={14} /> Imprimir</button>
                 </div>
               </div>
               <div className="tabs" role="tablist">
-                {["All", "Available", "Active", "Expired", "Revoked"].map((f) => (
+                {["Todos", "Disponível", "Ativo", "Expirado", "Revogado"].map((f) => (
                   <button key={f} className={`tab ${voucherFilter === f ? "active" : ""}`} onClick={() => setVoucherFilter(f)} role="tab" aria-selected={voucherFilter === f}>
                     {f}
                   </button>
@@ -436,21 +458,21 @@ export default function App() {
               </div>
               {filteredVouchers.length === 0 ? (
                 <div className="card empty">
-                  <h3>No vouchers in this filter</h3>
-                  <p>Generate a batch to start selling access.</p>
-                  <button className="btn primary" style={{ marginTop: 12 }} onClick={() => setGenOpen(true)}>Generate vouchers</button>
+                  <h3>Nenhum vale neste filtro</h3>
+                  <p>Gere um lote para começar a vender acesso.</p>
+                  <button className="btn primary" style={{ marginTop: 12 }} onClick={() => setGenOpen(true)}>Gerar vales</button>
                 </div>
               ) : (
                 <div className="card table-wrap">
                   <table>
                     <thead>
                       <tr>
-                        <th>Code</th>
-                        <th>Plan</th>
-                        <th>Duration</th>
-                        <th>Device</th>
-                        <th>Created</th>
-                        <th>Status</th>
+                        <th>Código</th>
+                        <th>Plano</th>
+                        <th>Duração</th>
+                        <th>Dispositivos</th>
+                        <th>Criado</th>
+                        <th>Estado</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -461,7 +483,7 @@ export default function App() {
                           <td>{v.duration}</td>
                           <td>{v.device}</td>
                           <td>{v.created}</td>
-                          <td><span className={`badge ${v.status.toLowerCase()}`}>{v.status}</span></td>
+                          <td><span className={`badge ${v.status.toLowerCase()}`}>{traduzir(v.status)}</span></td>
                         </tr>
                       ))}
                     </tbody>
@@ -475,11 +497,11 @@ export default function App() {
             <>
               <div className="page-head">
                 <div>
-                  <h1 className="page-title">Plans</h1>
-                  <p className="page-sub">Duration, speed and price for guest access.</p>
+                  <h1 className="page-title">Planos</h1>
+                  <p className="page-sub">Duração, velocidade e preço do acesso aos clientes.</p>
                 </div>
                 <button className="btn primary" onClick={() => setPlanOpen(true)}>
-                  <SvgIcon name="plus" size={14} /> Create plan
+                  <SvgIcon name="plus" size={14} /> Criar plano
                 </button>
               </div>
               <div className="plans-grid">
@@ -487,14 +509,14 @@ export default function App() {
                   <article className="card plan-card" key={p.id}>
                     <div className="kpi-top">
                       {p.name}
-                      <span className="badge available">{p.used} used</span>
+                      <span className="badge available">{p.used} usados</span>
                     </div>
-                    <div className="plan-price">{p.price.split(" ")[0]} <span>Kz</span></div>
+                    <div className="plan-price">{p.price.split(" ")[0]}</div>
                     <div className="meta-list">
-                      <div><span>Duration</span><strong style={{ color: "var(--text)" }}>{p.duration}</strong></div>
-                      <div><span>Speed</span><strong style={{ color: "var(--text)" }}>{p.speed}</strong></div>
-                      <div><span>Data limit</span><strong style={{ color: "var(--text)" }}>{p.data}</strong></div>
-                      <div><span>Devices</span><strong style={{ color: "var(--text)" }}>{p.devices}</strong></div>
+                      <div><span>Duração</span><strong style={{ color: "var(--text)" }}>{p.duration}</strong></div>
+                      <div><span>Velocidade</span><strong style={{ color: "var(--text)" }}>{p.speed}</strong></div>
+                      <div><span>Limite de dados</span><strong style={{ color: "var(--text)" }}>{p.data}</strong></div>
+                      <div><span>Dispositivos</span><strong style={{ color: "var(--text)" }}>{p.devices}</strong></div>
                     </div>
                   </article>
                 ))}
@@ -506,8 +528,8 @@ export default function App() {
             <>
               <div className="page-head">
                 <div>
-                  <h1 className="page-title">Networks</h1>
-                  <p className="page-sub">Physical topology of {network.name}.</p>
+                  <h1 className="page-title">Redes</h1>
+                  <p className="page-sub">Topologia física de {network.name}.</p>
                 </div>
               </div>
               <div className="card">
@@ -515,9 +537,9 @@ export default function App() {
                   <button className="topo-node" onClick={() => setDevice({ id: "isp", type: "Internet", name: "Upstream ISP", ip: "41.223.x.x", status: "Online", uptime: "99.98%", clients: "—", bandwidth: "200 Mbps", firmware: "—", cpu: "—", memory: "—", lastSeen: "Just now" })}>
                     <div>
                       <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Internet</div>
-                      <strong>ISP Upstream</strong>
+                      <strong>Fornecedor (ISP)</strong>
                     </div>
-                    <span className="badge online"><span className="dot" /> Operational</span>
+                    <span className="badge online"><span className="dot" /> Operacional</span>
                   </button>
                   <div className="topo-line" />
                   <button className="topo-node" onClick={() => setDevice(devicesSeed[0])}>
@@ -556,33 +578,33 @@ export default function App() {
             <>
               <div className="page-head">
                 <div>
-                  <h1 className="page-title">Devices</h1>
-                  <p className="page-sub">Routers, switches and access points under management.</p>
+                  <h1 className="page-title">Equipamentos</h1>
+                  <p className="page-sub">Routers, switches e pontos de acesso em gestão.</p>
                 </div>
               </div>
               <div className="card table-wrap">
                 <table>
                   <thead>
                     <tr>
-                      <th>Device</th>
-                      <th>Type</th>
+                      <th>Equipamento</th>
+                      <th>Tipo</th>
                       <th>IP</th>
-                      <th>Clients</th>
-                      <th>Bandwidth</th>
+                      <th>Clientes</th>
+                      <th>Banda</th>
                       <th>Firmware</th>
-                      <th>Status</th>
+                      <th>Estado</th>
                     </tr>
                   </thead>
                   <tbody>
                     {devicesSeed.map((d) => (
                       <tr key={d.id} onClick={() => setDevice(d)} style={{ cursor: "pointer" }}>
                         <td>{d.name}</td>
-                        <td>{d.type}</td>
+                        <td>{traduzirTipo(d.type)}</td>
                         <td className="mono">{d.ip}</td>
                         <td>{d.clients}</td>
                         <td>{d.bandwidth}</td>
                         <td className="mono">{d.firmware}</td>
-                        <td><span className={`badge ${d.status === "Online" ? "online" : "danger"}`}>{d.status}</span></td>
+                        <td><span className={`badge ${d.status === "Online" ? "online" : "danger"}`}>{traduzir(d.status)}</span></td>
                       </tr>
                     ))}
                   </tbody>
@@ -595,20 +617,20 @@ export default function App() {
             <>
               <div className="page-head">
                 <div>
-                  <h1 className="page-title">Sessions</h1>
-                  <p className="page-sub">Active and recent authentications.</p>
+                  <h1 className="page-title">Sessões</h1>
+                  <p className="page-sub">Autenticações ativas e recentes.</p>
                 </div>
               </div>
               <div className="card table-wrap">
                 <table>
                   <thead>
                     <tr>
-                      <th>User</th>
-                      <th>Started</th>
-                      <th>Duration</th>
-                      <th>Data</th>
-                      <th>Plan</th>
-                      <th>Status</th>
+                      <th>Utilizador</th>
+                      <th>Início</th>
+                      <th>Duração</th>
+                      <th>Dados</th>
+                      <th>Plano</th>
+                      <th>Estado</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -619,7 +641,7 @@ export default function App() {
                         <td>{s.duration}</td>
                         <td>{s.data}</td>
                         <td>{s.plan}</td>
-                        <td><span className={`badge ${s.status === "Live" ? "online" : "offline"}`}>{s.status}</span></td>
+                        <td><span className={`badge ${s.status === "Live" ? "online" : "offline"}`}>{traduzir(s.status)}</span></td>
                       </tr>
                     ))}
                   </tbody>
@@ -632,12 +654,12 @@ export default function App() {
             <>
               <div className="page-head">
                 <div>
-                  <h1 className="page-title">Analytics</h1>
-                  <p className="page-sub">Traffic, vouchers and revenue for {network.name}.</p>
+                  <h1 className="page-title">Análises</h1>
+                  <p className="page-sub">Tráfego, vales e receita de {network.name}.</p>
                 </div>
                 <div className="tabs" style={{ marginBottom: 0 }}>
-                  {["Today", "7 days", "30 days", "Custom"].map((r) => (
-                    <button key={r} className={`tab ${range === r ? "active" : ""}`} onClick={() => { setRange(r); if (r === "Custom") toast("Pick a custom range from the calendar") }}>
+                  {["Hoje", "7 dias", "30 dias", "Personalizado"].map((r) => (
+                    <button key={r} className={`tab ${range === r ? "active" : ""}`} onClick={() => { setRange(r); if (r === "Personalizado") toast("Escolha um intervalo no calendário") }}>
                       {r}
                     </button>
                   ))}
@@ -645,13 +667,13 @@ export default function App() {
               </div>
               <div className="analytics-grid">
                 <section className="card panel">
-                  <div className="panel-head"><h2 className="panel-title">Users per hour</h2></div>
+                  <div className="panel-head"><h2 className="panel-title">Utilizadores por hora</h2></div>
                   <div className="chart-wrap" style={{ height: 180 }}>
                     <Bars values={hourlyUsers} labels={hourlyUsers.map((_, i) => `${i}h`)} />
                   </div>
                 </section>
                 <section className="card panel">
-                  <div className="panel-head"><h2 className="panel-title">Plans most used</h2></div>
+                  <div className="panel-head"><h2 className="panel-title">Planos mais usados</h2></div>
                   {planShare.map((p) => (
                     <div className="bar-row" key={p.name}>
                       <span style={{ width: 72 }}>{p.name}</span>
@@ -663,17 +685,17 @@ export default function App() {
               </div>
               <div className="mini-charts">
                 <section className="card panel">
-                  <div className="panel-head"><h2 className="panel-title">Bandwidth</h2></div>
+                  <div className="panel-head"><h2 className="panel-title">Banda</h2></div>
                   <AreaChart data={bandwidth} hover={hoverBw} setHover={setHoverBw} />
                 </section>
                 <section className="card panel">
-                  <div className="panel-head"><h2 className="panel-title">Revenue</h2></div>
+                  <div className="panel-head"><h2 className="panel-title">Receita</h2></div>
                   <Sparkline series={revenueSeries} color="#22c55e" />
-                  <div className="kpi-value" style={{ fontSize: 22, marginTop: 12 }}>128,500 Kz</div>
-                  <div className="delta up">+18% vs previous</div>
+                  <div className="kpi-value" style={{ fontSize: 22, marginTop: 12 }}>128,500</div>
+                  <div className="delta up">+18% vs período anterior</div>
                 </section>
                 <section className="card panel">
-                  <div className="panel-head"><h2 className="panel-title">Devices</h2></div>
+                  <div className="panel-head"><h2 className="panel-title">Equipamentos</h2></div>
                   {deviceShare.map((p) => (
                     <div className="bar-row" key={p.name}>
                       <span style={{ width: 72 }}>{p.name}</span>
@@ -681,7 +703,7 @@ export default function App() {
                       <span className="stat-inline">{p.value}%</span>
                     </div>
                   ))}
-                  <div style={{ marginTop: 16, color: "var(--text-muted)", fontSize: 12 }}>Avg session 54 min · Data 1.1 GB</div>
+                  <div style={{ marginTop: 16, color: "var(--text-muted)", fontSize: 12 }}>Sessão média 54 min · Dados 1,1 GB</div>
                 </section>
               </div>
             </>
@@ -692,48 +714,48 @@ export default function App() {
               <div className="page-head">
                 <div>
                   <h1 className="page-title">Portal</h1>
-                  <p className="page-sub">Visual editor for the captive portal guests see.</p>
+                  <p className="page-sub">Editor visual do portal cativo que os clientes veem.</p>
                 </div>
-                <button className="btn primary" onClick={() => toast("Portal published")}>Publish</button>
+                <button className="btn primary" onClick={() => toast("Portal publicado")}>Publicar</button>
               </div>
               <div className="portal-layout">
                 <section className="card panel">
                   <div className="field">
-                    <label htmlFor="pname">Network name</label>
+                    <label htmlFor="pname">Nome da rede</label>
                     <input id="pname" value={portal.name} onChange={(e) => setPortal({ ...portal, name: e.target.value })} />
                   </div>
                   <div className="field">
-                    <label htmlFor="pmsg">Message</label>
+                    <label htmlFor="pmsg">Mensagem</label>
                     <input id="pmsg" value={portal.message} onChange={(e) => setPortal({ ...portal, message: e.target.value })} />
                   </div>
                   <div className="grid-2">
                     <div className="field">
-                      <label htmlFor="pbg">Background</label>
+                      <label htmlFor="pbg">Fundo</label>
                       <input id="pbg" type="color" value={portal.bg} onChange={(e) => setPortal({ ...portal, bg: e.target.value })} />
                     </div>
                     <div className="field">
-                      <label htmlFor="pcol">Accent</label>
+                      <label htmlFor="pcol">Cor de destaque</label>
                       <input id="pcol" type="color" value={portal.color} onChange={(e) => setPortal({ ...portal, color: e.target.value })} />
                     </div>
                   </div>
                   <div className="field">
-                    <label htmlFor="pterms">Terms of use</label>
+                    <label htmlFor="pterms">Termos de utilização</label>
                     <textarea id="pterms" value={portal.terms} onChange={(e) => setPortal({ ...portal, terms: e.target.value })} />
                   </div>
                   <div className="field">
-                    <label htmlFor="psuccess">Success page</label>
+                    <label htmlFor="psuccess">Página de sucesso</label>
                     <textarea id="psuccess" value={portal.success} onChange={(e) => setPortal({ ...portal, success: e.target.value })} />
                   </div>
                 </section>
                 <section className="card panel">
-                  <h2 className="panel-title" style={{ marginBottom: 14 }}>Portal Preview</h2>
+                  <h2 className="panel-title" style={{ marginBottom: 14 }}>Pré-visualização do Portal</h2>
                   <div className="phone">
                     <div className="phone-screen" style={{ background: portal.bg }}>
                       <div className="phone-logo" style={{ background: portal.color }}>W</div>
                       <strong>{portal.name}</strong>
                       <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)" }}>{portal.message}</div>
-                      <input defaultValue="ZG-82LX-PA" readOnly aria-label="Voucher code" />
-                      <button className="connect" style={{ background: portal.color }}>CONNECT</button>
+                      <input defaultValue="VA-82LX-PA" readOnly aria-label="Voucher code" />
+                      <button className="connect" style={{ background: portal.color }}>LIGAR</button>
                       <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", lineHeight: 1.4 }}>{portal.terms}</div>
                     </div>
                   </div>
@@ -746,22 +768,22 @@ export default function App() {
             <>
               <div className="page-head">
                 <div>
-                  <h1 className="page-title">Users</h1>
-                  <p className="page-sub">Operator accounts for this controller.</p>
+                  <h1 className="page-title">Utilizadores</h1>
+                  <p className="page-sub">Contas de operador deste controlador.</p>
                 </div>
               </div>
               <div className="card table-wrap">
                 <table>
                   <thead>
-                    <tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th></tr>
+                    <tr><th>Nome</th><th>Email</th><th>Função</th><th>Estado</th></tr>
                   </thead>
                   <tbody>
                     {portalUsers.map((u) => (
                       <tr key={u.email}>
                         <td>{u.name}</td>
                         <td>{u.email}</td>
-                        <td>{u.role}</td>
-                        <td><span className={`badge ${u.status === "Active" ? "online" : "offline"}`}>{u.status}</span></td>
+                        <td>{traduzir(u.role)}</td>
+                        <td><span className={`badge ${u.status === "Ativo" ? "online" : "offline"}`}>{traduzir(u.status)}</span></td>
                       </tr>
                     ))}
                   </tbody>
@@ -774,15 +796,15 @@ export default function App() {
             <>
               <div className="page-head">
                 <div>
-                  <h1 className="page-title">Team</h1>
-                  <p className="page-sub">People with access to Kimbo Networks.</p>
+                  <h1 className="page-title">Equipa</h1>
+                  <p className="page-sub">Pessoas com acesso a este sistema.</p>
                 </div>
-                <button className="btn primary" onClick={() => toast("Invite sent")}>Invite member</button>
+                <button className="btn primary" onClick={() => toast("Convite enviado")}>Convidar membro</button>
               </div>
               <div className="card table-wrap">
                 <table>
                   <thead>
-                    <tr><th>Name</th><th>Role</th><th>Email</th><th>Last seen</th></tr>
+                    <tr><th>Nome</th><th>Função</th><th>Email</th><th>Visto por último</th></tr>
                   </thead>
                   <tbody>
                     {team.map((m) => (
@@ -793,7 +815,7 @@ export default function App() {
                             {m.name}
                           </div>
                         </td>
-                        <td>{m.role}</td>
+                        <td>{traduzir(m.role)}</td>
                         <td>{m.email}</td>
                         <td>{m.last}</td>
                       </tr>
@@ -808,43 +830,43 @@ export default function App() {
             <>
               <div className="page-head">
                 <div>
-                  <h1 className="page-title">Settings</h1>
-                  <p className="page-sub">Controller, RADIUS and branding.</p>
+                  <h1 className="page-title">Definições</h1>
+                  <p className="page-sub">Controlador, RADIUS e identidade visual.</p>
                 </div>
               </div>
               <div className="split">
                 <section className="card panel">
-                  <h2 className="panel-title" style={{ marginBottom: 14 }}>General</h2>
+                  <h2 className="panel-title" style={{ marginBottom: 14 }}>Geral</h2>
                   <div className="field">
-                    <label htmlFor="org">Organization</label>
-                    <input id="org" defaultValue="Kimbo Networks" />
+                    <label htmlFor="org">Organização</label>
+                    <input id="org" defaultValue="WiFi Controller" />
                   </div>
                   <div className="field">
-                    <label htmlFor="tz">Timezone</label>
+                    <label htmlFor="tz">Fuso horário</label>
                     <select id="tz" defaultValue="Africa/Luanda">
                       <option>Africa/Luanda</option>
                       <option>UTC</option>
                     </select>
                   </div>
                   <div className="field">
-                    <label htmlFor="curr">Currency</label>
-                    <input id="curr" defaultValue="Kz — Angolan Kwanza" />
+                    <label htmlFor="curr">Moeda</label>
+                    <input id="curr" defaultValue="(configurada via WIFIC_MOEDA)" />
                   </div>
-                  <button className="btn primary" onClick={() => toast("Settings saved")}>Save changes</button>
+                  <button className="btn primary" onClick={() => toast("Definições gravadas")}>Gravar alterações</button>
                 </section>
                 <section className="card panel">
                   <h2 className="panel-title" style={{ marginBottom: 14 }}>Router</h2>
                   <div className="field">
-                    <label htmlFor="host">MikroTik host</label>
+                    <label htmlFor="host">Endereço do MikroTik</label>
                     <input id="host" defaultValue="192.168.88.1" className="mono" />
                   </div>
                   <div className="field">
-                    <label htmlFor="api">API port</label>
+                    <label htmlFor="api">Porta da API</label>
                     <input id="api" defaultValue="8728" />
                   </div>
                   <div className="status-row">
-                    <span>Connection</span>
-                    <span className="status-right"><span className="dot" /> Connected</span>
+                    <span>Ligação</span>
+                    <span className="status-right"><span className="dot" /> Ligado</span>
                   </div>
                 </section>
               </div>
@@ -853,7 +875,7 @@ export default function App() {
         </main>
       </div>
 
-      <nav className="mobile-nav" aria-label="Mobile">
+      <nav className="mobile-nav" aria-label="Móvel">
         {MOBILE_NAV.map((n) => (
           <button key={n.id} className={page === n.id ? "active" : ""} onClick={() => go(n.id)}>
             <SvgIcon name={n.icon} />
@@ -863,54 +885,54 @@ export default function App() {
       </nav>
 
       {genOpen && (
-        <Modal title="Generate vouchers" hint="Batch access codes for guests." onClose={() => setGenOpen(false)}>
+        <Modal title="Gerar vales" hint="Lote de códigos de acesso para clientes." onClose={() => setGenOpen(false)}>
           {!genDone ? (
             <>
               <div className="grid-2">
                 <div className="field">
-                  <label htmlFor="qty">Quantity</label>
+                  <label htmlFor="qty">Quantidade</label>
                   <input id="qty" type="number" min="1" max="1000" value={genForm.qty} onChange={(e) => setGenForm({ ...genForm, qty: e.target.value })} />
                 </div>
                 <div className="field">
-                  <label htmlFor="plan">Plan</label>
+                  <label htmlFor="plan">Plano</label>
                   <select id="plan" value={genForm.plan} onChange={(e) => setGenForm({ ...genForm, plan: e.target.value })}>
-                    <option>1 Hour — 100 Kz</option>
-                    <option>3 Hours — 200 Kz</option>
-                    <option>1 Day — 500 Kz</option>
-                    <option>7 Days — 2,000 Kz</option>
+                    <option>1 Hora — 100</option>
+                    <option>3 Horas — 200</option>
+                    <option>1 Dia — 500</option>
+                    <option>7 Dias — 2,000</option>
                   </select>
                 </div>
               </div>
               <div className="grid-2">
                 <div className="field">
-                  <label htmlFor="speed">Speed</label>
+                  <label htmlFor="speed">Velocidade</label>
                   <input id="speed" value={genForm.speed} onChange={(e) => setGenForm({ ...genForm, speed: e.target.value })} />
                 </div>
                 <div className="field">
-                  <label htmlFor="data">Data limit</label>
+                  <label htmlFor="data">Limite de dados</label>
                   <input id="data" value={genForm.data} onChange={(e) => setGenForm({ ...genForm, data: e.target.value })} />
                 </div>
               </div>
               <div className="grid-2">
                 <div className="field">
-                  <label htmlFor="dev">Devices</label>
+                  <label htmlFor="dev">Dispositivos</label>
                   <input id="dev" type="number" min="1" value={genForm.devices} onChange={(e) => setGenForm({ ...genForm, devices: Number(e.target.value) })} />
                 </div>
                 <div className="field">
-                  <label htmlFor="exp">Expiration</label>
+                  <label htmlFor="exp">Validade</label>
                   <input id="exp" value={genForm.expiration} onChange={(e) => setGenForm({ ...genForm, expiration: e.target.value })} />
                 </div>
               </div>
               <button className="btn primary" style={{ width: "100%", height: 40, marginTop: 8 }} onClick={generateVouchers}>
-                Generate {genForm.qty} vouchers
+                Gerar {genForm.qty} vales
               </button>
             </>
           ) : (
             <>
-              <p className="hint" style={{ color: "var(--success)" }}>{genDone} vouchers generated successfully.</p>
+              <p className="hint" style={{ color: "var(--success)" }}>{genDone} vales gerados com sucesso.</p>
               <div className="head-actions">
-                <button className="btn" onClick={() => toast("CSV downloaded")}><SvgIcon name="download" size={14} /> Download CSV</button>
-                <button className="btn" onClick={() => toast("Print job queued")}><SvgIcon name="print" size={14} /> Print vouchers</button>
+                <button className="btn" onClick={() => toast("CSV descarregado")}><SvgIcon name="download" size={14} /> Descarregar CSV</button>
+                <button className="btn" onClick={() => toast("Impressão na fila")}><SvgIcon name="print" size={14} /> Imprimir vales</button>
               </div>
             </>
           )}
@@ -918,18 +940,18 @@ export default function App() {
       )}
 
       {planOpen && (
-        <Modal title="Create plan" hint="Define duration, speed and price." onClose={() => setPlanOpen(false)}>
+        <Modal title="Criar plano" hint="Defina duração, velocidade e preço." onClose={() => setPlanOpen(false)}>
           <div className="field">
-            <label htmlFor="pn">Name</label>
-            <input id="pn" placeholder="2 Hours" />
+            <label htmlFor="pn">Nome</label>
+            <input id="pn" placeholder="2 Horas" />
           </div>
           <div className="grid-2">
             <div className="field">
-              <label htmlFor="pp">Price (Kz)</label>
+              <label htmlFor="pp">Preço</label>
               <input id="pp" defaultValue="150" />
             </div>
             <div className="field">
-              <label htmlFor="ps">Speed</label>
+              <label htmlFor="ps">Velocidade</label>
               <input id="ps" defaultValue="10 Mbps" />
             </div>
           </div>
@@ -937,12 +959,12 @@ export default function App() {
             className="btn primary"
             style={{ width: "100%" }}
             onClick={() => {
-              setPlans((p) => [...p, { id: `p${p.length}`, name: "2 Hours", price: "150 Kz", duration: "2 hours", speed: "10 Mbps", data: "2 GB", devices: 1, used: 0 }])
+              setPlans((p) => [...p, { id: `p${p.length}`, name: "2 Horas", price: "150", duration: "2 horas", speed: "10 Mbps", data: "2 GB", devices: 1, used: 0 }])
               setPlanOpen(false)
-              toast("Plan created")
+              toast("Plano criado")
             }}
           >
-            Create plan
+            Criar plano
           </button>
         </Modal>
       )}
@@ -951,7 +973,7 @@ export default function App() {
         <Modal title={confirm.title} onClose={() => setConfirm(null)}>
           <p className="hint">{confirm.body}</p>
           <div className="confirm-actions">
-            <button className="btn ghost" onClick={() => setConfirm(null)}>Cancel</button>
+            <button className="btn ghost" onClick={() => setConfirm(null)}>Cancelar</button>
             <button className={`btn ${confirm.danger ? "danger" : "primary"}`} onClick={confirm.onConfirm}>{confirm.action}</button>
           </div>
         </Modal>
@@ -961,15 +983,15 @@ export default function App() {
         <Drawer title={device.name} onClose={() => setDevice(null)}>
           <div className="meta-list">
             {[
-              ["Status", device.status],
-              ["Uptime", device.uptime],
+              ["Estado", traduzir(device.status)],
+              ["Atividade", device.uptime],
               ["IP", device.ip],
-              ["Clients", device.clients],
-              ["Bandwidth", device.bandwidth],
+              ["Clientes", device.clients],
+              ["Banda", device.bandwidth],
               ["Firmware", device.firmware],
               ["CPU", device.cpu],
-              ["Memory", device.memory],
-              ["Last seen", device.lastSeen],
+              ["Memória", device.memory],
+              ["Visto por último", device.lastSeen],
             ].map(([k, v]) => (
               <div key={k}>
                 <span>{k}</span>
@@ -1013,13 +1035,13 @@ function UserTable({
       <table>
         <thead>
           <tr>
-            <th>User</th>
-            <th>Device</th>
+            <th>Utilizador</th>
+            <th>Dispositivo</th>
             <th>IP</th>
-            <th>Plan</th>
-            <th>Speed</th>
-            <th>Remaining</th>
-            <th>Status</th>
+            <th>Plano</th>
+            <th>Velocidade</th>
+            <th>Restante</th>
+            <th>Estado</th>
             <th></th>
           </tr>
         </thead>
@@ -1032,13 +1054,13 @@ function UserTable({
               <td>{u.plan}</td>
               <td>{u.speed}</td>
               <td className="stat-inline">{u.remaining}</td>
-              <td><span className="badge online"><span className="dot" /> Online</span></td>
+              <td><span className="badge online"><span className="dot" /> Ligado</span></td>
               <td>
                 <div className="row-actions">
-                  <button className="btn sm ghost" onClick={() => onView(u)}>View</button>
-                  <button className="btn sm ghost" onClick={() => onExtend(u)}>Extend</button>
-                  <button className="btn sm ghost" onClick={() => onDisconnect(u)}>Disconnect</button>
-                  <button className="btn sm danger" onClick={() => onBlock(u)}>Block</button>
+                  <button className="btn sm ghost" onClick={() => onView(u)}>Ver</button>
+                  <button className="btn sm ghost" onClick={() => onExtend(u)}>Estender</button>
+                  <button className="btn sm ghost" onClick={() => onDisconnect(u)}>Desligar</button>
+                  <button className="btn sm danger" onClick={() => onBlock(u)}>Bloquear</button>
                 </div>
               </td>
             </tr>

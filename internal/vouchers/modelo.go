@@ -20,20 +20,24 @@ const (
 // alfabetoVais exclui caracteres ambíguos (0/O, 1/I) para leitura manual.
 const alfabetoVais = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
-// formatoCodigo é o padrão ZG-XXXX-XXXX.
-const formatoCodigo = "ZG-%s-%s"
+// formatoCodigo define o padrão PREFIXO-XXXX-XXXX. O prefixo é configurável
+// (WIFIC_PREFIXO_VALE); sem configuração usa "VA".
+const formatoCodigo = "%s-%s-%s"
+
+// PrefixoPorOmissao é usado quando o operador não define um prefixo.
+const PrefixoPorOmissao = "VA"
 
 // Vale é um código de acesso vendido a um cliente.
 type Vale struct {
-	ID         int64      `json:"id"`
-	Codigo     string     `json:"codigo"`
-	PlanoID    int64      `json:"plano_id"`
-	PlanoNome  string     `json:"plano_nome,omitempty"`
-	Estado     string     `json:"estado"`
-	ExpiraEm   *time.Time `json:"expira_em,omitempty"`
-	UsadoEm    *time.Time `json:"usado_em,omitempty"`
-	UsadoPor   string     `json:"usado_por,omitempty"`
-	CriadoEm   time.Time  `json:"criado_em"`
+	ID        int64      `json:"id"`
+	Codigo    string     `json:"codigo"`
+	PlanoID   int64      `json:"plano_id"`
+	PlanoNome string     `json:"plano_nome,omitempty"`
+	Estado    string     `json:"estado"`
+	ExpiraEm  *time.Time `json:"expira_em,omitempty"`
+	UsadoEm   *time.Time `json:"usado_em,omitempty"`
+	UsadoPor  string     `json:"usado_por,omitempty"`
+	CriadoEm  time.Time  `json:"criado_em"`
 }
 
 // PodeUsar indica se o vale está disponível para ativação.
@@ -46,10 +50,10 @@ func (v Vale) PodeUsar() bool {
 
 // GerarLote são os dados para gerar um lote de vales.
 type GerarLote struct {
-	PlanoID   int64  `json:"plano_id"`
-	Quantidade int   `json:"quantidade"`
-	ValidadeDias int `json:"validade_dias"`
-	Prefixo   string `json:"prefixo,omitempty"`
+	PlanoID      int64  `json:"plano_id"`
+	Quantidade   int    `json:"quantidade"`
+	ValidadeDias int    `json:"validade_dias"`
+	Prefixo      string `json:"prefixo,omitempty"`
 }
 
 // Validar normaliza e valida os parâmetros do lote.
@@ -107,8 +111,12 @@ func estadoValido(e string) bool {
 	return false
 }
 
-// GerarCodigo devolve um código de vale aleatório no formato ZG-XXXX-XXXX.
-func GerarCodigo(prefijo string) (string, error) {
+// GerarCodigo devolve um código de vale aleatório no formato PREFIXO-XXXX-XXXX.
+func GerarCodigo(prefixo string) (string, error) {
+	prefixo = strings.ToUpper(strings.TrimSpace(prefixo))
+	if prefixo == "" {
+		prefixo = PrefixoPorOmissao
+	}
 	partes := make([]string, 2)
 	for i := range partes {
 		bloco, err := randomDoAlfabeto(lenAlfabeto)
@@ -117,7 +125,7 @@ func GerarCodigo(prefijo string) (string, error) {
 		}
 		partes[i] = bloco
 	}
-	return fmt.Sprintf(formatoCodigo, partes[0], partes[1]), nil
+	return fmt.Sprintf(formatoCodigo, prefixo, partes[0], partes[1]), nil
 }
 
 const lenAlfabeto = 4

@@ -222,4 +222,3 @@ func lerVale(s scanner) (Vale, error) {
 	v.UsadoPor = usadoPor.String
 	return v, nil
 }
-

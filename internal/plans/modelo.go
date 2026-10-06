@@ -9,22 +9,27 @@ import (
 
 // Plano descreve um pacote de acesso vendido aos utilizadores.
 type Plano struct {
-	ID             int64     `json:"id"`
-	Nome           string    `json:"nome"`
-	PrecoCentavos  int64     `json:"preco_centavos"`
-	DuracaoMinutos int       `json:"duracao_minutos"`
-	VelocidadeKbps int       `json:"velocidade_kbps"`
-	LimiteDadosMB  int       `json:"limite_dados_mb"` // 0 = ilimitado
-	MaxDispositivos int      `json:"max_dispositivos"`
-	Ativo          bool      `json:"ativo"`
-	CriadoEm       time.Time `json:"criado_em"`
-	AtualizadoEm   *time.Time `json:"atualizado_em,omitempty"`
-	ValesUsados    int       `json:"vales_usados"`
+	ID              int64      `json:"id"`
+	Nome            string     `json:"nome"`
+	PrecoCentavos   int64      `json:"preco_centavos"`
+	DuracaoMinutos  int        `json:"duracao_minutos"`
+	VelocidadeKbps  int        `json:"velocidade_kbps"`
+	LimiteDadosMB   int        `json:"limite_dados_mb"` // 0 = ilimitado
+	MaxDispositivos int        `json:"max_dispositivos"`
+	Ativo           bool       `json:"ativo"`
+	CriadoEm        time.Time  `json:"criado_em"`
+	AtualizadoEm    *time.Time `json:"atualizado_em,omitempty"`
+	ValesUsados     int        `json:"vales_usados"`
 }
 
-// PrecoFormatado devolve o preço em Kwanzas com separadores.
-func (p Plano) PrecoFormatado() string {
-	return fmt.Sprintf("%s Kz", formatarMilhar(p.PrecoCentavos/100))
+// PrecoFormatado devolve o preço com separadores de milhar.
+// A moeda não é imposta pelo sistema: quem formata para exibição escolhe
+// o símbolo (configurável via WIFIC_MOEDA).
+func (p Plano) PrecoFormatado(moeda string) string {
+	if strings.TrimSpace(moeda) == "" {
+		return formatarMilhar(p.PrecoCentavos / 100)
+	}
+	return fmt.Sprintf("%s %s", formatarMilhar(p.PrecoCentavos/100), moeda)
 }
 
 // DuracaoFormatada devolve a duração em linguagem natural.

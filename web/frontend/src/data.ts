@@ -36,7 +36,7 @@ export interface LiveUser {
   mac: string;
 }
 
-export type VoucherStatus = "Available" | "Active" | "Expired" | "Revoked";
+export type VoucherStatus = "Disponível" | "Ativo" | "Expirado" | "Revogado";
 export interface Voucher {
   code: string;
   plan: string;
@@ -58,7 +58,7 @@ export interface Plan {
 }
 
 export type DeviceStatus = "Online" | "Offline";
-export type DeviceType = "Router" | "Switch" | "Access Point" | "Internet";
+export type DeviceType = "Router" | "Switch" | "Access Point" | "Firewall" | "Internet";
 export interface Device {
   id: string;
   type: DeviceType;
@@ -97,7 +97,7 @@ export interface TeamMember {
   last: string;
 }
 
-export type UserStatus = "Active" | "Disabled";
+export type UserStatus = "Ativo" | "Desativado";
 export interface PortalUser {
   name: string;
   email: string;
@@ -106,21 +106,21 @@ export interface PortalUser {
 }
 
 export const company: Company = {
-  name: "Kimbo Networks",
-  role: "Owner",
-  initials: "KN",
+  name: "WiFi Controller",
+  role: "Operador",
+  initials: "WC",
 };
 
 export const networks: Network[] = [
-  { id: "main", name: "Main Network" },
-  { id: "hotel", name: "Hotel Lobby" },
-  { id: "cafe", name: "Cafe Guest" },
+  { id: "main", name: "Rede Principal" },
+  { id: "hotel", name: "Receção do Hotel" },
+  { id: "cafe", name: "Clientes do Café" },
 ];
 
 export const kpis: KPI[] = [
   {
     id: "users",
-    label: "Online Users",
+    label: "Clientes Ligados",
     value: "47",
     delta: "+12%",
     up: true,
@@ -128,7 +128,7 @@ export const kpis: KPI[] = [
   },
   {
     id: "vouchers",
-    label: "Active Vouchers",
+    label: "Vales Ativos",
     value: "326",
     delta: "+4%",
     up: true,
@@ -136,7 +136,7 @@ export const kpis: KPI[] = [
   },
   {
     id: "bw",
-    label: "Bandwidth",
+    label: "Banda",
     value: "184 Mbps",
     delta: "-8%",
     up: false,
@@ -144,8 +144,8 @@ export const kpis: KPI[] = [
   },
   {
     id: "rev",
-    label: "Today's Revenue",
-    value: "128,500 Kz",
+    label: "Receita de Hoje",
+    value: "128,500",
     delta: "+18%",
     up: true,
     series: [40, 55, 48, 70, 82, 90, 105, 112, 120, 128],
@@ -170,7 +170,7 @@ export const liveUsers: LiveUser[] = [
     user: "+244 923 441 882",
     device: "iPhone",
     ip: "192.168.1.24",
-    plan: "1 Hour",
+    plan: "1 Hora",
     speed: "5 Mbps",
     remaining: "42 min",
     status: "Online",
@@ -178,10 +178,10 @@ export const liveUsers: LiveUser[] = [
   },
   {
     id: 2,
-    user: "Guest-029",
+    user: "Cliente-029",
     device: "Android",
     ip: "192.168.1.31",
-    plan: "3 Hours",
+    plan: "3 Horas",
     speed: "10 Mbps",
     remaining: "2h 14m",
     status: "Online",
@@ -192,7 +192,7 @@ export const liveUsers: LiveUser[] = [
     user: "+244 912 778 104",
     device: "Laptop",
     ip: "192.168.1.18",
-    plan: "1 Day",
+    plan: "1 Dia",
     speed: "20 Mbps",
     remaining: "18h 02m",
     status: "Online",
@@ -200,10 +200,10 @@ export const liveUsers: LiveUser[] = [
   },
   {
     id: 4,
-    user: "Guest-044",
+    user: "Cliente-044",
     device: "Android",
     ip: "192.168.1.47",
-    plan: "1 Hour",
+    plan: "1 Hora",
     speed: "5 Mbps",
     remaining: "11 min",
     status: "Online",
@@ -214,7 +214,7 @@ export const liveUsers: LiveUser[] = [
     user: "+244 935 220 019",
     device: "iPhone",
     ip: "192.168.1.52",
-    plan: "7 Days",
+    plan: "7 Dias",
     speed: "20 Mbps",
     remaining: "5d 4h",
     status: "Online",
@@ -222,21 +222,21 @@ export const liveUsers: LiveUser[] = [
   },
   {
     id: 6,
-    user: "Staff-02",
+    user: "Pessoal-02",
     device: "Windows",
     ip: "192.168.1.10",
-    plan: "Staff",
+    plan: "Pessoal",
     speed: "50 Mbps",
-    remaining: "Unlimited",
+    remaining: "Ilimitado",
     status: "Online",
     mac: "B8:27:EB:44:12:90",
   },
   {
     id: 7,
-    user: "Guest-061",
+    user: "Cliente-061",
     device: "Tablet",
     ip: "192.168.1.63",
-    plan: "3 Hours",
+    plan: "3 Horas",
     speed: "10 Mbps",
     remaining: "48 min",
     status: "Online",
@@ -247,7 +247,7 @@ export const liveUsers: LiveUser[] = [
     user: "+244 941 003 552",
     device: "Android",
     ip: "192.168.1.71",
-    plan: "1 Day",
+    plan: "1 Dia",
     speed: "10 Mbps",
     remaining: "6h 40m",
     status: "Online",
@@ -257,77 +257,77 @@ export const liveUsers: LiveUser[] = [
 
 export const vouchersSeed: Voucher[] = [
   {
-    code: "ZG-82LX-PA",
-    plan: "1 Hour",
+    code: "VA-82LX-PA",
+    plan: "1 Hora",
     duration: "1h",
-    device: "1 device",
-    created: "Today",
-    status: "Available",
+    device: "1 dispositivo",
+    created: "Hoje",
+    status: "Disponível",
   },
   {
-    code: "ZG-91KQ-TR",
-    plan: "3 Hours",
+    code: "VA-91KQ-TR",
+    plan: "3 Horas",
     duration: "3h",
-    device: "1 device",
-    created: "Today",
-    status: "Active",
+    device: "1 dispositivo",
+    created: "Hoje",
+    status: "Ativo",
   },
   {
-    code: "ZG-44NM-QX",
-    plan: "1 Day",
+    code: "VA-44NM-QX",
+    plan: "1 Dia",
     duration: "24h",
-    device: "2 devices",
-    created: "Yesterday",
-    status: "Active",
+    device: "2 dispositivos",
+    created: "Ontem",
+    status: "Ativo",
   },
   {
-    code: "ZG-18VB-YH",
-    plan: "1 Hour",
+    code: "VA-18VB-YH",
+    plan: "1 Hora",
     duration: "1h",
-    device: "1 device",
-    created: "Yesterday",
-    status: "Expired",
+    device: "1 dispositivo",
+    created: "Ontem",
+    status: "Expirado",
   },
   {
-    code: "ZG-77CD-LK",
-    plan: "7 Days",
+    code: "VA-77CD-LK",
+    plan: "7 Dias",
     duration: "7d",
-    device: "2 devices",
-    created: "12 Sep",
-    status: "Available",
+    device: "2 dispositivos",
+    created: "12 Set",
+    status: "Disponível",
   },
   {
-    code: "ZG-03AF-WE",
-    plan: "3 Hours",
+    code: "VA-03AF-WE",
+    plan: "3 Horas",
     duration: "3h",
-    device: "1 device",
-    created: "12 Sep",
-    status: "Revoked",
+    device: "1 dispositivo",
+    created: "12 Set",
+    status: "Revogado",
   },
   {
-    code: "ZG-55PL-OK",
-    plan: "1 Day",
+    code: "VA-55PL-OK",
+    plan: "1 Dia",
     duration: "24h",
-    device: "1 device",
-    created: "11 Sep",
-    status: "Available",
+    device: "1 dispositivo",
+    created: "11 Set",
+    status: "Disponível",
   },
   {
-    code: "ZG-29HJ-UI",
-    plan: "1 Hour",
+    code: "VA-29HJ-UI",
+    plan: "1 Hora",
     duration: "1h",
-    device: "1 device",
-    created: "11 Sep",
-    status: "Active",
+    device: "1 dispositivo",
+    created: "11 Set",
+    status: "Ativo",
   },
 ];
 
 export const plans: Plan[] = [
   {
     id: "1h",
-    name: "1 Hour",
-    price: "100 Kz",
-    duration: "1 hour",
+    name: "1 Hora",
+    price: "100",
+    duration: "1 hora",
     speed: "5 Mbps",
     data: "1 GB",
     devices: 1,
@@ -335,9 +335,9 @@ export const plans: Plan[] = [
   },
   {
     id: "3h",
-    name: "3 Hours",
-    price: "200 Kz",
-    duration: "3 hours",
+    name: "3 Horas",
+    price: "200",
+    duration: "3 horas",
     speed: "10 Mbps",
     data: "3 GB",
     devices: 1,
@@ -345,9 +345,9 @@ export const plans: Plan[] = [
   },
   {
     id: "1d",
-    name: "1 Day",
-    price: "500 Kz",
-    duration: "24 hours",
+    name: "1 Dia",
+    price: "500",
+    duration: "24 horas",
     speed: "20 Mbps",
     data: "8 GB",
     devices: 2,
@@ -355,9 +355,9 @@ export const plans: Plan[] = [
   },
   {
     id: "7d",
-    name: "7 Days",
-    price: "2,000 Kz",
-    duration: "7 days",
+    name: "7 Dias",
+    price: "2,000",
+    duration: "7 dias",
     speed: "20 Mbps",
     data: "30 GB",
     devices: 2,
@@ -378,7 +378,7 @@ export const devices: Device[] = [
     firmware: "7.15.3",
     cpu: "18%",
     memory: "41%",
-    lastSeen: "Just now",
+    lastSeen: "Neste momento",
   },
   {
     id: "switch",
@@ -392,12 +392,12 @@ export const devices: Device[] = [
     firmware: "7.14.2",
     cpu: "6%",
     memory: "22%",
-    lastSeen: "Just now",
+    lastSeen: "Neste momento",
   },
   {
     id: "ap1",
     type: "Access Point",
-    name: "AP-01 Lobby",
+    name: "AP-01 Receção",
     ip: "192.168.88.11",
     status: "Online",
     uptime: "18d 2h",
@@ -406,7 +406,7 @@ export const devices: Device[] = [
     firmware: "6.6.55",
     cpu: "11%",
     memory: "34%",
-    lastSeen: "Just now",
+    lastSeen: "Neste momento",
   },
   {
     id: "ap2",
@@ -420,12 +420,12 @@ export const devices: Device[] = [
     firmware: "6.6.55",
     cpu: "9%",
     memory: "31%",
-    lastSeen: "Just now",
+    lastSeen: "Neste momento",
   },
   {
     id: "ap3",
     type: "Access Point",
-    name: "AP-03 Patio",
+    name: "AP-03 Pátio",
     ip: "192.168.88.13",
     status: "Offline",
     uptime: "—",
@@ -434,12 +434,12 @@ export const devices: Device[] = [
     firmware: "6.5.28",
     cpu: "—",
     memory: "—",
-    lastSeen: "2h ago",
+    lastSeen: "há 2h",
   },
   {
     id: "ap4",
     type: "Access Point",
-    name: "AP-04 Hall",
+    name: "AP-04 Hall Entrada",
     ip: "192.168.88.14",
     status: "Online",
     uptime: "9d 14h",
@@ -448,12 +448,12 @@ export const devices: Device[] = [
     firmware: "6.6.55",
     cpu: "7%",
     memory: "29%",
-    lastSeen: "Just now",
+    lastSeen: "Neste momento",
   },
   {
     id: "ap5",
     type: "Access Point",
-    name: "AP-05 Rooms A",
+    name: "AP-05 Quartos A",
     ip: "192.168.88.15",
     status: "Online",
     uptime: "21d 1h",
@@ -462,12 +462,12 @@ export const devices: Device[] = [
     firmware: "6.6.55",
     cpu: "5%",
     memory: "27%",
-    lastSeen: "Just now",
+    lastSeen: "Neste momento",
   },
   {
     id: "ap6",
     type: "Access Point",
-    name: "AP-06 Rooms B",
+    name: "AP-06 Quartos B",
     ip: "192.168.88.16",
     status: "Online",
     uptime: "21d 1h",
@@ -476,12 +476,12 @@ export const devices: Device[] = [
     firmware: "6.6.55",
     cpu: "4%",
     memory: "24%",
-    lastSeen: "Just now",
+    lastSeen: "Neste momento",
   },
   {
     id: "ap7",
     type: "Access Point",
-    name: "AP-07 Kitchen",
+    name: "AP-07 Cozinha",
     ip: "192.168.88.17",
     status: "Online",
     uptime: "6d 8h",
@@ -490,12 +490,12 @@ export const devices: Device[] = [
     firmware: "6.6.55",
     cpu: "3%",
     memory: "22%",
-    lastSeen: "Just now",
+    lastSeen: "Neste momento",
   },
   {
     id: "ap8",
     type: "Access Point",
-    name: "AP-08 Office",
+    name: "AP-08 Escritório",
     ip: "192.168.88.18",
     status: "Online",
     uptime: "42d 6h",
@@ -504,7 +504,7 @@ export const devices: Device[] = [
     firmware: "6.6.55",
     cpu: "8%",
     memory: "30%",
-    lastSeen: "Just now",
+    lastSeen: "Neste momento",
   },
 ];
 
@@ -515,25 +515,25 @@ export const sessions: Session[] = [
     started: "08:12",
     duration: "42 min",
     data: "420 MB",
-    plan: "1 Hour",
+    plan: "1 Hora",
     status: "Live",
   },
   {
     id: "s2",
-    user: "Guest-029",
+    user: "Cliente-029",
     started: "07:01",
     duration: "2h 14m",
     data: "1.2 GB",
-    plan: "3 Hours",
+    plan: "3 Horas",
     status: "Live",
   },
   {
     id: "s3",
-    user: "Guest-018",
-    started: "Yesterday 21:40",
+    user: "Cliente-018",
+    started: "Ontem 21:40",
     duration: "58 min",
     data: "310 MB",
-    plan: "1 Hour",
+    plan: "1 Hora",
     status: "Ended",
   },
   {
@@ -542,16 +542,16 @@ export const sessions: Session[] = [
     started: "06:18",
     duration: "4h 02m",
     data: "2.8 GB",
-    plan: "1 Day",
+    plan: "1 Dia",
     status: "Live",
   },
   {
     id: "s5",
-    user: "Guest-007",
-    started: "Yesterday 16:02",
+    user: "Cliente-007",
+    started: "Ontem 16:02",
     duration: "3h 00m",
     data: "890 MB",
-    plan: "3 Hours",
+    plan: "3 Horas",
     status: "Ended",
   },
 ];
@@ -564,47 +564,47 @@ export const revenueSeries: number[] = [
   8, 12, 9, 18, 22, 16, 28, 31, 24, 36, 41, 38,
 ];
 export const planShare: Share[] = [
-  { name: "1 Hour", value: 46 },
-  { name: "3 Hours", value: 28 },
-  { name: "1 Day", value: 18 },
-  { name: "7 Days", value: 8 },
+  { name: "1 Hora", value: 46 },
+  { name: "3 Horas", value: 28 },
+  { name: "1 Dia", value: 18 },
+  { name: "7 Dias", value: 8 },
 ];
 export const deviceShare: Share[] = [
   { name: "Android", value: 52 },
   { name: "iPhone", value: 31 },
-  { name: "Laptop", value: 12 },
-  { name: "Other", value: 5 },
+  { name: "Portátil", value: 12 },
+  { name: "Outros", value: 5 },
 ];
 
 export const team: TeamMember[] = [
-  { name: "Admin Kimbo", role: "Owner", email: "admin@kimbo.ao", last: "Now" },
+  { name: "Admin", role: "Operator", email: "admin@example.local", last: "Agora" },
   {
     name: "Marta Silva",
     role: "Operator",
-    email: "marta@kimbo.ao",
-    last: "12 min ago",
+    email: "marta@example.local",
+    last: "há 12 min",
   },
   {
     name: "Paulo Neto",
     role: "Support",
-    email: "paulo@kimbo.ao",
-    last: "Yesterday",
+    email: "paulo@example.local",
+    last: "Ontem",
   },
 ];
 
 export const portalUsers: PortalUser[] = [
-  { name: "Admin", email: "admin@kimbo.ao", role: "Owner", status: "Active" },
+  { name: "Admin", email: "admin@example.local", role: "Operator", status: "Ativo" },
   {
     name: "Front Desk",
-    email: "desk@kimbo.ao",
+    email: "desk@example.local",
     role: "Operator",
-    status: "Active",
+    status: "Ativo",
   },
   {
     name: "Night Shift",
-    email: "night@kimbo.ao",
+    email: "night@example.local",
     role: "Operator",
-    status: "Disabled",
+    status: "Desativado",
   },
 ];
 
@@ -617,6 +617,6 @@ export function generateCodes(n: number): string[] {
     ).join("");
   return Array.from({ length: n }, () => {
     const raw = make();
-    return `ZG-${raw.slice(0, 4)}-${raw.slice(4)}`;
+    return `VA-${raw.slice(0, 4)}-${raw.slice(4)}`;
   });
 }

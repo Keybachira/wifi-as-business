@@ -179,22 +179,12 @@ func (s *Serviço) AlterarSenha(ctx context.Context, contaID int64, senhaAtual, 
 	return s.TerminarTodasSessões(ctx, contaID)
 }
 
-// AlterarEstado ativa ou desativa uma conta, protegendo o último dono.
-func (s *Serviço) AlterarEstado(ctx context.Context, contaID int64, ativo bool) error {
-	if !ativo {
-		conta, err := s.repo.BuscarPorID(ctx, contaID)
-		if err != nil {
-			return err
-		}
-		if conta.Papel == PapelDono {
-			donos, err := s.repo.ContarDonos(ctx)
-			if err != nil {
-				return err
-			}
-			if donos <= 1 {
-				return fmt.Errorf("não é possível desativar a última conta de dono")
-			}
-		}
+// AlterarEstado ativa ou desativa uma conta.
+// Sistema genérico, sem dono: não há conta que não possa ser desativada.
+// Como autodesproteção mínima, impede desativar a própria conta em sessão.
+func (s *Serviço) AlterarEstado(ctx context.Context, contaID int64, ativo bool, contaSessaoID int64) error {
+	if !ativo && contaID == contaSessaoID {
+		return fmt.Errorf("não é possível desativar a própria conta com sessão iniciada")
 	}
 
 	if err := s.repo.AtualizarEstado(ctx, contaID, ativo); err != nil {
@@ -206,24 +196,15 @@ func (s *Serviço) AlterarEstado(ctx context.Context, contaID int64, ativo bool)
 	return nil
 }
 
-// AlterarPapel muda o papel de uma conta, com proteção do último dono.
+// AlterarPapel muda o rótulo da conta. Sem papéis de privilégio, é apenas
+// organização: qualquer valor não vazio é aceite como texto.
 func (s *Serviço) AlterarPapel(ctx context.Context, contaID int64, papel Papel) error {
-	if papel != PapelDono && papel != PapelOperador && papel != PapelSuporte {
-		return fmt.Errorf("papel inválido")
+	papel = Papel(strings.ToLower(strings.TrimSpace(string(papel))))
+	if papel == "" {
+		papel = PapelOperador
 	}
-
-	conta, err := s.repo.BuscarPorID(ctx, contaID)
-	if err != nil {
-		return err
-	}
-	if conta.Papel == PapelDono && papel != PapelDono {
-		donos, err := s.repo.ContarDonos(ctx)
-		if err != nil {
-			return err
-		}
-		if donos <= 1 {
-			return fmt.Errorf("não é possível remover o papel de dono da última conta")
-		}
+	if len(papel) > 30 {
+		return fmt.Errorf("o papel não pode exceder 30 caracteres")
 	}
 	return s.repo.AtualizarPapel(ctx, contaID, papel)
 }

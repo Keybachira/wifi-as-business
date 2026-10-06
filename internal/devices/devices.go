@@ -16,6 +16,8 @@ const (
 	TipoRouter      = "router"
 	TipoSwitch      = "switch"
 	TipoPontoAcesso = "ponto_acesso"
+	// TipoFirewall cobre pfSense e outros firewalls sob gestão.
+	TipoFirewall = "firewall"
 )
 
 // Estados possíveis.
@@ -54,6 +56,9 @@ func (d Dispositivo) Online() bool { return d.Estado == EstadoOnline }
 // ÉPontoAcesso indica se é um ponto de acesso sem fios.
 func (d Dispositivo) ÉPontoAcesso() bool { return d.Tipo == TipoPontoAcesso }
 
+// ÉFirewall indica se é um firewall sob gestão (pfSense ou similar).
+func (d Dispositivo) ÉFirewall() bool { return d.Tipo == TipoFirewall }
+
 // NovoDispositivo são os dados para registar um equipamento.
 type NovoDispositivo struct {
 	Nome       string `json:"nome"`
@@ -74,9 +79,9 @@ func (n *NovoDispositivo) Validar() error {
 		return errors.New("o nome não pode exceder 80 caracteres")
 	}
 	switch n.Tipo {
-	case TipoRouter, TipoSwitch, TipoPontoAcesso:
+	case TipoRouter, TipoSwitch, TipoPontoAcesso, TipoFirewall:
 	default:
-		return errors.New("tipo inválido: use router, switch ou ponto_acesso")
+		return errors.New("tipo inválido: use router, switch, ponto_acesso ou firewall")
 	}
 	if net.ParseIP(n.EnderecoIP) == nil {
 		return ErrIPInvalido
@@ -155,15 +160,25 @@ func (r *Repositorio) Criar(ctx context.Context, n NovoDispositivo) (int64, erro
 	return res.LastInsertId()
 }
 
+// consultaTelemetria devolve o UPDATE numa unica linha.
+//
+// O nome da coluna tempo_actividade ficou partido entre duas linhas e o
+// SQLite reportou "no such column", sem apontar para a causa. O driver
+// aceita quebras de linha em geral; o que falha e um identificador partido.
+// Manter a instrucao numa linha evita que isso volte a acontecer.
+func consultaTelemetria() string {
+	return "UPDATE dispositivos SET estado = ?, tempo_actividade = ?, " +
+		"clientes = ?, banda = ?, firmware = ?, cpu = ?, memoria = ?, " +
+		"visto_em = ? WHERE id = ?"
+}
+
 // AtualizarTelemetria grava as metricas mais recentes do equipamento.
 func (r *Repositorio) AtualizarTelemetria(ctx context.Context, id int64, t Telemetria) error {
 	estado := t.Estado
 	if estado != EstadoOnline && estado != EstadoOffline {
 		estado = EstadoOffline
 	}
-	res, err := r.db.ExecContext(ctx,
-		`UPDATE dispositivos SET estado = ?, tempo_atividade = ?, clientes = ?, banda = ?,
-			firmware = ?, cpu = ?, memoria = ?, visto_em = ? WHERE id = ?`,
+	res, err := r.db.ExecContext(ctx, consultaTelemetria(),
 		estado, t.Uptime, t.Clientes, t.Banda, t.Firmware, t.CPU, t.Memoria, time.Now().UTC(), id)
 	if err != nil {
 		return fmt.Errorf("nao foi possivel atualizar o dispositivo: %w", err)

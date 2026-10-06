@@ -16,16 +16,20 @@ import (
 
 // Resultados possíveis de uma autenticação.
 const (
-	ResultadoAceite     = "aceite"
-	ResultadoRejeitado  = "rejeitado"
-	ResultadoExpirado   = "expirado"
+	ResultadoAceite       = "aceite"
+	ResultadoRejeitado    = "rejeitado"
+	ResultadoExpirado     = "expirado"
 	ResultadoDesconhecido = "desconhecido"
 )
 
 // Erros do módulo.
 var (
-	ErrNaoConfigurado = errors.New("o serviço RADIUS não está configurado")
+	ErrNaoConfigurado  = errors.New("o serviço RADIUS não está configurado")
 	CredencialInvalida = errors.New("credenciais inválidas")
+	// Erros do protocolo (ver internal/radius/pacote.go).
+	ErrPacoteCurto      = errors.New("pacote RADIUS demasiado curto")
+	ErrPacoteInvalido   = errors.New("pacote RADIUS inválido")
+	ErrAtributoInvalido = errors.New("atributo RADIUS inválido")
 )
 
 // Fornecedor valida as credenciais de um acesso.
@@ -48,11 +52,11 @@ type InfoAcesso struct {
 
 // Pacote autenticado é a resposta enviada ao cliente RADIUS.
 type PacoteAutenticado struct {
-	Utilizador    string `json:"utilizador"`
-	SessionID     string `json:"session_id"`
-	DownloadKbps  int    `json:"download_kbps"`
-	UploadKbps    int    `json:"upload_kbps"`
-	LimiteMinutos int    `json:"limite_minutos"`
+	Utilizador    string    `json:"utilizador"`
+	SessionID     string    `json:"session_id"`
+	DownloadKbps  int       `json:"download_kbps"`
+	UploadKbps    int       `json:"upload_kbps"`
+	LimiteMinutos int       `json:"limite_minutos"`
 	ValidoAte     time.Time `json:"valido_ate"`
 }
 
@@ -119,4 +123,45 @@ func (s *Serviço) Autenticar(ctx context.Context, utilizador, segredo string) (
 		LimiteMinutos: info.LimiteMinutos,
 		ValidoAte:     time.Now().UTC().Add(time.Duration(info.LimiteMinutos) * time.Minute),
 	}, nil
+}
+
+// AcessoRede é o resultado de uma autenticação vinda de um router.
+type AcessoRede struct {
+	SessionID     string
+	LimiteMinutos int
+	EnderecoIP    []byte
+}
+
+// AutenticarRede valida um Access-Request que chegou por UDP.
+//
+// O User-Name traz o endereço MAC do equipamento e o User-Password traz o
+// código do vale, encriptado com o segredo partilhado. A senha só é
+// descodificada depois de o pacote passar na validação do segredo, para que
+// um router sem a chave correta nunca veja o vale em claro.
+func (s *Serviço) AutenticarRede(pedido *Pacote, utilizador, segredo string, senhaEnviada []byte) (AcessoRede, error) {
+	if segredo == "" {
+		return AcessoRede{}, ErrNaoConfigurado
+	}
+
+	// A senha encriptada é feita com o Request Authenticator do pedido.
+	decifrada := descodificarPassword(segredo, pedido.Autenticador, senhaEnviada)
+	if decifrada == "" {
+		return AcessoRede{}, CredencialInvalida
+	}
+
+	informacao, err := s.Autenticar(context.Background(), utilizador, decifrada)
+	if err != nil {
+		return AcessoRede{}, err
+	}
+
+	acesso := AcessoRede{
+		SessionID:     informacao.SessionID,
+		LimiteMinutos: informacao.LimiteMinutos,
+	}
+	// O router pode enviar o IP do cliente; devolvê-lo no Framed-IP-Address
+	// ajuda o firewall a associar a sessão ao endereço certo.
+	if ip, ok := pedido.AtributoEndereco(AttrCalledStationID); ok {
+		acesso.EnderecoIP = ip.To4()
+	}
+	return acesso, nil
 }

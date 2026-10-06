@@ -22,11 +22,18 @@ func contaDoContexto(ctx context.Context) (Conta, bool) {
 
 // ServicoHTTP expõe o módulo de autenticação sobre HTTP.
 type ServicoHTTP struct {
-	srv *Serviço
+	srv  *Serviço
+	nome string
 }
 
 // NovoServicoHTTP cria o adaptador HTTP.
-func NovoServicoHTTP(srv *Serviço) *ServicoHTTP { return &ServicoHTTP{srv: srv} }
+// nome é o nome do sistema apresentado na rota de saúde (configurável).
+func NovoServicoHTTP(srv *Serviço, nome string) *ServicoHTTP {
+	if nome == "" {
+		nome = "WiFi Controller"
+	}
+	return &ServicoHTTP{srv: srv, nome: nome}
+}
 
 // Rotas regista os caminhos do módulo no mux.
 // exigir é o middleware de autenticação aplicado às rotas protegidas.
@@ -34,6 +41,9 @@ func (h *ServicoHTTP) Rotas(mux *http.ServeMux, exigir func(http.Handler) http.H
 	// Rotas públicas
 	mux.Handle("POST /api/v1/auth/login", system.Adaptador(h.login))
 	mux.Handle("GET /api/v1/auth/saude", system.Adaptador(h.saudePublica))
+	// Configuração inicial: só funcionam enquanto não existe nenhuma conta.
+	mux.Handle("GET /api/v1/auth/estado-inicial", system.Adaptador(h.estadoInicial))
+	mux.Handle("POST /api/v1/auth/primeira-conta", system.Adaptador(h.criarPrimeiraConta))
 
 	// Rotas protegidas
 	mux.Handle("POST /api/v1/auth/logout", exigir(system.Adaptador(h.logout)))
@@ -47,7 +57,7 @@ func (h *ServicoHTTP) Rotas(mux *http.ServeMux, exigir func(http.Handler) http.H
 func (h *ServicoHTTP) saudePublica(w http.ResponseWriter, r *http.Request) error {
 	system.ResponderJSON(w, http.StatusOK, map[string]any{
 		"estado":  "ok",
-		"servico": "WiFi Controller",
+		"servico": h.nome,
 		"versao":  "1.0.0",
 		"horario": time.Now().UTC(),
 	})
@@ -101,7 +111,7 @@ func (h *ServicoHTTP) listarContas(w http.ResponseWriter, r *http.Request) error
 func (h *ServicoHTTP) criarConta(w http.ResponseWriter, r *http.Request) error {
 	contaAtual, _ := contaDoContexto(r.Context())
 	if !contaAtual.PodeGerirContas() {
-		return system.ErroProibido("Apenas o dono pode criar contas")
+		return system.ErroProibido("A conta não pode gerir outras contas")
 	}
 
 	var dados CriarConta
@@ -126,7 +136,7 @@ func (h *ServicoHTTP) criarConta(w http.ResponseWriter, r *http.Request) error {
 func (h *ServicoHTTP) alterarEstado(w http.ResponseWriter, r *http.Request) error {
 	contaAtual, _ := contaDoContexto(r.Context())
 	if !contaAtual.PodeGerirContas() {
-		return system.ErroProibido("Apenas o dono pode gerir contas")
+		return system.ErroProibido("A conta não pode gerir outras contas")
 	}
 
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
@@ -141,7 +151,7 @@ func (h *ServicoHTTP) alterarEstado(w http.ResponseWriter, r *http.Request) erro
 		return err
 	}
 
-	if err := h.srv.AlterarEstado(r.Context(), id, corpo.Ativo); err != nil {
+	if err := h.srv.AlterarEstado(r.Context(), id, corpo.Ativo, contaAtual.ID); err != nil {
 		if err == ErrContaNaoEncontrada {
 			return system.ErroNaoEncontrado("Conta")
 		}
@@ -154,7 +164,7 @@ func (h *ServicoHTTP) alterarEstado(w http.ResponseWriter, r *http.Request) erro
 func (h *ServicoHTTP) alterarPapel(w http.ResponseWriter, r *http.Request) error {
 	contaAtual, _ := contaDoContexto(r.Context())
 	if !contaAtual.PodeGerirContas() {
-		return system.ErroProibido("Apenas o dono pode gerir contas")
+		return system.ErroProibido("A conta não pode gerir outras contas")
 	}
 
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
@@ -197,6 +207,49 @@ func (h *ServicoHTTP) ExigirAutenticacao(proximo http.Handler) http.Handler {
 		proximo.ServeHTTP(w, r.WithContext(
 			context.WithValue(r.Context(), chaveConta, conta)))
 	})
+}
+
+// estadoInicial diz ao painel se o sistema ainda precisa de configuração.
+// Resposta pública porque precede qualquer autenticação.
+func (h *ServicoHTTP) estadoInicial(w http.ResponseWriter, r *http.Request) error {
+	existe, err := h.srv.ExisteAlgumaConta(r.Context())
+	if err != nil {
+		return system.ErroInterno(err.Error())
+	}
+	system.ResponderJSON(w, http.StatusOK, map[string]any{"precisa_configuracao": !existe})
+	return nil
+}
+
+// criarPrimeiraConta cria a primeira conta sem qualquer autenticação.
+// É a forma genérica de arranque: nada é imposto pelo servidor, o operador
+// cria a conta que quiser na primeira utilização. Só funciona uma vez.
+func (h *ServicoHTTP) criarPrimeiraConta(w http.ResponseWriter, r *http.Request) error {
+	existe, err := h.srv.ExisteAlgumaConta(r.Context())
+	if err != nil {
+		return system.ErroInterno(err.Error())
+	}
+	if existe {
+		return system.ErroConflito("O sistema já tem contas; use o login ou outra conta para criar novas")
+	}
+
+	var dados CriarConta
+	if err := system.DecodificarJSON(r, &dados); err != nil {
+		return err
+	}
+	// A primeira conta fica ativa de imediato, para não bloquear o acesso.
+	verdadeiro := true
+	dados.Ativo = &verdadeiro
+
+	conta, err := h.srv.CriarConta(r.Context(), dados)
+	if err != nil {
+		switch err {
+		case ErrEmailEmUso:
+			return system.ErroConflito("Este email já está registado")
+		}
+		return system.ErroValidacao("", err.Error())
+	}
+	system.ResponderJSON(w, http.StatusCreated, conta)
+	return nil
 }
 
 // enderecoRemoto devolve o IP do cliente, respeitando o cabeçalho X-Forwarded-For.

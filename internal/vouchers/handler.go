@@ -55,9 +55,9 @@ func (h *ServicoHTTP) vistaPublica(w http.ResponseWriter, r *http.Request) error
 func (h *ServicoHTTP) listar(w http.ResponseWriter, r *http.Request) error {
 	q := r.URL.Query()
 	filtro := FiltroVales{
-		Estado:  q.Get("estado"),
-		Busca:   q.Get("busca"),
-		Limite:  intDeQuery(q.Get("limite")),
+		Estado:   q.Get("estado"),
+		Busca:    q.Get("busca"),
+		Limite:   intDeQuery(q.Get("limite")),
 		Deslocar: intDeQuery(q.Get("deslocar")),
 	}
 	if id := intDeQuery(q.Get("plano_id")); id > 0 {
@@ -69,10 +69,10 @@ func (h *ServicoHTTP) listar(w http.ResponseWriter, r *http.Request) error {
 		return system.ErroInterno(err.Error())
 	}
 	system.ResponderJSON(w, http.StatusOK, map[string]any{
-		"itens":     vales,
-		"total":     total,
-		"limite":    filtro.Limite,
-		"deslocar":  filtro.Deslocar,
+		"itens":    vales,
+		"total":    total,
+		"limite":   filtro.Limite,
+		"deslocar": filtro.Deslocar,
 	})
 	return nil
 }

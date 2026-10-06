@@ -2,8 +2,8 @@ package system
 
 import (
 	"encoding/json"
-	"io"
 	"errors"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"

@@ -19,27 +19,19 @@ import (
 
 // Erros do cliente MikroTik.
 var (
-	ErrNaoConfigurado = errors.New("o router MikroTik não está configurado")
-	ErrSemAcesso      = errors.New("o router recusou a autenticação")
+	ErrNaoConfigurado  = errors.New("o router MikroTik não está configurado")
+	ErrSemAcesso       = errors.New("o router recusou a autenticação")
+	ErrIPNaoEncontrado = errors.New("o endereço IP não consta da tabela ARP do router")
 )
 
 // Estado de um interface no router.
 type EstadoInterface struct {
-	Nome      string  `json:"nome"`
-	Ativa     bool    `json:"ativa"`
-	Comment   string  `json:"comment"`
-	RXMbps    float64 `json:"rx_mbps"`
-	TXMbps    float64 `json:"tx_mbps"`
-	Clientes  int     `json:"clientes"`
-}
-
-// Regra de limitação aplicada a um cliente.
-type RegraLimitacao struct {
-	EnderecoMAC   string `json:"endereco_mac"`
-	DownloadKbps  int    `json:"download_kbps"`
-	UploadKbps    int    `json:"upload_kbps"`
-	LimiteMinutos int    `json:"limite_minutos"`
-	Ativa         bool   `json:"ativa"`
+	Nome     string  `json:"nome"`
+	Ativa    bool    `json:"ativa"`
+	Comment  string  `json:"comment"`
+	RXMbps   float64 `json:"rx_mbps"`
+	TXMbps   float64 `json:"tx_mbps"`
+	Clientes int     `json:"clientes"`
 }
 
 // Cliente fala com a API REST de um router MikroTik.
@@ -112,6 +104,34 @@ func (c *Cliente) pedido(ctx context.Context, metodo, caminho string, corpo any)
 	return io.ReadAll(resposta.Body)
 }
 
+// ResolverIP devolve o endereço MAC associado a um IP.
+//
+// A sessão guarda o IP, mas as filas do hotspot são indexadas por MAC: sem esta
+// tradução não é possível aplicar a velocidade a um cliente já ligado.
+func (c *Cliente) ResolverIP(ctx context.Context, enderecoIP string) (string, error) {
+	dados, err := c.pedido(ctx, http.MethodGet, "/ip/arp", nil)
+	if err != nil {
+		return "", err
+	}
+
+	var tabela struct {
+		ARP []struct {
+			EnderecoIP  string `json:"address"`
+			EnderecoMAC string `json:"mac-address"`
+		} `json:"arp"`
+	}
+	if err := json.Unmarshal(dados, &tabela); err != nil {
+		return "", fmt.Errorf("resposta inválida do router: %w", err)
+	}
+
+	for _, linha := range tabela.ARP {
+		if linha.EnderecoIP == enderecoIP {
+			return linha.EnderecoMAC, nil
+		}
+	}
+	return "", ErrIPNaoEncontrado
+}
+
 // ListarInterfaces devolve o estado das interfaces do router.
 func (c *Cliente) ListarInterfaces(ctx context.Context) ([]EstadoInterface, error) {
 	dados, err := c.pedido(ctx, http.MethodGet, "/interface", nil)
@@ -142,13 +162,17 @@ func (c *Cliente) DesligarCliente(ctx context.Context, enderecoMAC string) error
 }
 
 // AplicarLimite define a velocidade de um cliente na fila do router.
-func (c *Cliente) AplicarLimite(ctx context.Context, r RegraLimitacao) error {
+//
+// O MikroTik identifica clientes por endereço MAC, por isso este método
+// satisfaz a interface do MikroTik; o_limitador traduz o IP da sessão para
+// MAC antes de chamar.
+func (c *Cliente) AplicarLimite(ctx context.Context, enderecoMAC string, downloadKbps, uploadKbps int) error {
 	corpo := map[string]any{
-		"address":    r.EnderecoMAC,
-		"rate-limit": fmt.Sprintf("%dk/%dk", r.DownloadKbps, r.UploadKbps),
+		"address":    enderecoMAC,
+		"rate-limit": fmt.Sprintf("%dk/%dk", downloadKbps, uploadKbps),
 		"comment":    "wificontroller",
 	}
 	_, err := c.pedido(ctx, http.MethodPut,
-		"/ip/hotspot/user?=.id="+r.EnderecoMAC, corpo)
+		"/ip/hotspot/user?=.id="+enderecoMAC, corpo)
 	return err
 }

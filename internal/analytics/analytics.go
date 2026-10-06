@@ -39,7 +39,6 @@ type MetricasHoje struct {
 	Utilizadores       int   `json:"utilizadores_unicos"`
 	ValesVendidos      int   `json:"vales_vendidos"`
 	ReceitaCentavos    int64 `json:"receita_centavos"`
-	ReceitaKz          int64 `json:"receita_kz"`
 	SessaoMediaMin     int   `json:"sessao_media_minutos"`
 	DispositivosOnline int   `json:"dispositivos_online"`
 	DispositivosTotal  int   `json:"dispositivos_total"`
@@ -89,7 +88,6 @@ func (r *Repositorio) Resumo(ctx context.Context) (MetricasHoje, error) {
 		Scan(&m.ReceitaCentavos); err != nil {
 		return m, err
 	}
-	m.ReceitaKz = m.ReceitaCentavos / 100
 
 	var totalMin, totalSessoes int
 	if err := r.db.QueryRowContext(ctx, `
@@ -236,4 +234,3 @@ func (r *Repositorio) GravarMetricas(ctx context.Context, instante time.Time, do
 		instante.Truncate(time.Hour), downloadKbps, uploadKbps, utilizadores)
 	return err
 }
-

@@ -14,15 +14,17 @@ wifi-as-business/
 │   └── server/
 │       └── main.go          # arranque: configuração, DI, rotas, manutenção
 ├── internal/
-│   ├── auth/                # contas, sessões de acesso, papéis (dono/operador/suporte)
+│   ├── auth/                # contas de acesso ao painel (sem papéis de privilégio)
 │   ├── vouchers/            # vales: geração em lote, ativação, revogação, expiração
 │   ├── plans/               # planos de acesso (preço, duração, velocidade, dados)
 │   ├── sessions/            # sessões de clientes, desconexão, expiração automática
 │   ├── users/               # utilizadores registados no portal
 │   ├── networks/            # redes WiFi e respetiva topologia
 │   ├── devices/             # inventário de routers, switches e pontos de acesso
-│   ├── radius/              # validação de credenciais para o servidor RADIUS
+│   ├── radius/              # validação de credenciais: serviço e servidor RADIUS
 │   ├── mikrotik/            # cliente da API REST do RouterOS
+│   ├── pfsense/             # cliente da API REST do pfSense
+│   ├── limitadores/         # agregador de routers sob gestão
 │   ├── portal/              # configuração do portal cativo
 │   ├── analytics/           # métricas agregadas para o painel
 │   ├── system/              # configuração, erros HTTP, servidor, middleware
@@ -46,6 +48,10 @@ Cada módulo segue a mesma divisão em camadas:
 | `handler.go` | Rotas HTTP, leitura do pedido, tradução de erros |
 
 ---
+
+O servidor é **genérico e funciona 100% local**: nome, moeda e prefixo dos
+vales são configuráveis, os dados ficam num ficheiro SQLite local e não há
+conta imposta no arranque — a primeira conta é criada por si.
 
 ## Requisitos
 
@@ -72,24 +78,50 @@ O servidor escuta em `http://localhost:8080` por omissão.
 Na primeira execução são criados automaticamente:
 
 - o ficheiro `data/controller.db` com todas as tabelas;
-- uma conta de dono (credenciais indicadas no arranque — **anote-as**);
-- quatro planos de acesso de exemplo (1 Hora, 3 Horas, 1 Dia, 7 Dias).
+- **nada mais**: não há contas nem planos predefinidos.
 
-### Credenciais iniciais
+### Primeira conta (sem "dono")
 
-Define-as para não depender dos valores gerados:
+Não existe papel de dono nem conta criada pelo servidor. Duas formas:
+
+1. **Pela API** (recomendado) — só funciona enquanto não existir nenhuma conta:
 
 ```bash
-WIFIC_ADMIN_EMAIL=admin@kimbo.ao
-WIFIC_ADMIN_SENHA=Kimbo2026
+curl -s -X POST localhost:8080/api/v1/auth/primeira-conta \
+  -H 'Content-Type: application/json' \
+  -d '{"nome":"Operador","email":"operador@exemplo.local","senha":"MudarEsta1"}'
 ```
 
-## Configuração
+Para saber se o sistema ainda precisa de configuração:
+`GET /api/v1/auth/estado-inicial` → `{"precisa_configuracao":true}`.
 
-Todas as opções são variáveis de ambiente com o prefixo `WIFIC_`:
+2. **Por configuração** — para arranques desacompanhados:
+
+```bash
+WIFIC_ADMIN_EMAIL=operador@exemplo.local
+WIFIC_ADMIN_SENHA=MudarEsta1
+```
+
+### Configuração
+
+Toda a configuração vem de variáveis com o prefixo `WIFIC_`. Além do ambiente,
+o servidor lê **um ficheiro local** no arranque — o primeiro que existir:
+
+1. o caminho indicado em `WIFIC_FICHEIRO`;
+2. `config.env` na pasta de execução;
+3. `.env` na pasta de execução.
+
+Variáveis já definidas no ambiente **não** são sobrescritas pelo ficheiro.
+Modelo completo em [`config/config.example.env`](config/config.example.env).
 
 | Variável | Omissão | Descrição |
 |---|---|---|
+| `WIFIC_NOME` | `WiFi Controller` | Nome do sistema (saúde, logs) |
+| `WIFIC_MOEDA` | vazia | Moeda exibida (ex.: `Kz`, `USD`); vazia = sem símbolo |
+| `WIFIC_PREFIXO_VALE` | `VA` | Prefixo dos códigos de vale (1–4 caracteres) |
+| `WIFIC_PLANOS_INICIAIS` | vazia | Planos criados no arranque (ver abaixo) |
+| `WIFIC_ADMIN_EMAIL` / `WIFIC_ADMIN_SENHA` | vazias | Cria a primeira conta no arranque |
+| `WIFIC_FICHEIRO` | — | Ficheiro de configuração local a usar |
 | `WIFIC_PORTA` | `8080` | Porta do servidor HTTP |
 | `WIFIC_ENDERECO` | `0.0.0.0` | Interface de escuta |
 | `WIFIC_BANCO` | `data/controller.db` | Ficheiro SQLite |
@@ -97,14 +129,32 @@ Todas as opções são variáveis de ambiente com o prefixo `WIFIC_`:
 | `WIFIC_AMBIENTE` | `desenvolvimento` | `producao` ativa validações mais estritas |
 | `WIFIC_DURACAO_SESSAO` | `12h` | Validade do token de acesso |
 | `WIFIC_CUSTO_HASH` | `12` | Custo do bcrypt (mínimo 12 em produção) |
-| `WIFIC_ADMIN_EMAIL` | gerado | Email da conta de dono inicial |
-| `WIFIC_ADMIN_SENHA` | gerada | Senha da conta de dono inicial |
 | `WIFIC_MIKROTIK_ENDERECO` | `192.168.88.1` | Endereço do router |
 | `WIFIC_MIKROTIK_USUARIO` | `admin` | Utilizador da API do router |
 | `WIFIC_MIKROTIK_SENHA` | — | Senha da API (vazia = integração desativada) |
 | `WIFIC_MIKROTIK_PORTA_API` | `8728` | Porta da API do router |
-| `WIFIC_RADIUS_ENDERECO` | `127.0.0.1` | Endereço do servidor RADIUS |
-| `WIFIC_RADIUS_PORTA` | `1812` | Porta do servidor RADIUS |
+| `WIFIC_RADIUS_ENDERECO` | `127.0.0.1` | Endereço onde o servidor RADIUS escuta |
+| `WIFIC_RADIUS_PORTA` | `1812` | Porta UDP do servidor RADIUS |
+| `WIFIC_RADIUS_SEGREDO` | — | Segredo partilhado com o router (vazio = servidor UDP desativado) |
+| `WIFIC_PFSENSE_ENDERECO` | — | Endereço do pfSense, com esquema e porta (vazio = integração desativada) |
+| `WIFIC_PFSENSE_USUARIO` | `admin` | Utilizador da API do pfSense |
+| `WIFIC_PFSENSE_SENHA` | — | Senha de acesso, quando não se usa chave de API |
+| `WIFIC_PFSENSE_CHAVE_API` | — | Chave de API do pfSense; tem precedência sobre utilizador/senha |
+| `WIFIC_PFSENSE_ALIAS` | — | Alias do pfSense que autoriza os IPs dos clientes |
+
+**Planos iniciais opcionais** (`WIFIC_PLANOS_INICIAIS`), separados por vírgula:
+
+```
+Nome;preco_centavos;duracao_min;velocidade_kbps[;dados_mb][;max_dispositivos]
+```
+
+Exemplo:
+
+```bash
+WIFIC_PLANOS_INICIAIS="1 Hora;100;60;5000;1024;1, 1 Dia;500;1440;20000;8192;2"
+```
+
+Sem esta variável o sistema arranca sem planos — crie-os via API ou painel.
 
 Em `producao` o arranque **falha** se o segredo JWT estiver no valor
 predefinido ou se o custo do hash for inferior a 12.
@@ -186,7 +236,7 @@ Authorization: Bearer <token>
 | `GET` | `/api/v1/auth/saude` | Estado de saúde do serviço |
 | `POST` | `/api/v1/auth/login` | Autenticar e obter token |
 | `GET` | `/api/v1/portal/publico` | Aparência do portal cativo |
-| `GET` | `/api/v1/publico/portal?codigo=ZG-XXXX-XXXX` | Validar um código (consulta) |
+| `GET` | `/api/v1/publico/portal?codigo=VA-XXXX-XXXX` | Validar um código (consulta) |
 | `POST` | `/api/v1/publico/validar` | Validar um código sem o consumir |
 | `POST` | `/api/v1/publico/sessao` | Autenticar cliente e abrir sessão |
 
@@ -194,12 +244,14 @@ Authorization: Bearer <token>
 
 | Método | Caminho | Papel |
 |---|---|---|
+| `GET` | `/api/v1/auth/estado-inicial` | público |
+| `POST` | `/api/v1/auth/primeira-conta` | público (só sem contas) |
 | `POST` | `/api/v1/auth/logout` | qualquer |
 | `GET` | `/api/v1/auth/sessao` | qualquer |
 | `GET` | `/api/v1/contas` | qualquer |
-| `POST` | `/api/v1/contas` | dono |
-| `PATCH` | `/api/v1/contas/{id}/estado` | dono |
-| `PATCH` | `/api/v1/contas/{id}/papel` | dono |
+| `POST` | `/api/v1/contas` | qualquer conta |
+| `PATCH` | `/api/v1/contas/{id}/estado` | qualquer conta (não a própria) |
+| `PATCH` | `/api/v1/contas/{id}/papel` | qualquer conta |
 
 ### Planos, vales e sessões
 
@@ -253,7 +305,12 @@ Authorization: Bearer <token>
 # Autenticar
 TOKEN=$(curl -s -X POST localhost:8080/api/v1/auth/login \
   -H 'Content-Type: application/json' \
-  -d '{"email":"admin@kimbo.ao","senha":"Kimbo2026"}' | jq -r .token)
+  -d '{"email":"operador@exemplo.local","senha":"MudarEsta1"}' | jq -r .token)
+
+# Primeiro uso: criar a conta inicial (só funciona sem contas existentes)
+# curl -s -X POST localhost:8080/api/v1/auth/primeira-conta \
+#   -H 'Content-Type: application/json' \
+#   -d '{"nome":"Operador","email":"operador@exemplo.local","senha":"MudarEsta1"}'
 
 # Gerar 50 vales do plano 1
 curl -s -X POST localhost:8080/api/v1/vales/lote \
@@ -263,7 +320,7 @@ curl -s -X POST localhost:8080/api/v1/vales/lote \
 # Autenticar um cliente a partir do portal cativo
 curl -s -X POST localhost:8080/api/v1/publico/sessao \
   -H 'Content-Type: application/json' \
-  -d '{"codigo":"ZG-XXXX-XXXX","endereco_ip":"192.168.1.50",
+  -d '{"codigo":"VA-XXXX-XXXX","endereco_ip":"192.168.1.50',
        "endereco_mac":"DC:A6:32:01:77:2E","tipo_dispositivo":"iphone"}'
 ```
 
@@ -272,10 +329,11 @@ curl -s -X POST localhost:8080/api/v1/publico/sessao \
 ## Decisões de conceção
 
 **Dinheiro em centavos.** `preco_centavos` é um inteiro, nunca vírgula
-flutuante. `10000` = 100 Kz. Evita erros de arredondamento.
+flutuante. `10000` = 100 unidades da moeda configurada. Evita erros de arredondamento.
 
-**Códigos de vale ofuscados.** Alfabeto sem `0/O` e `1/I`, formato `ZG-XXXX-XXXX`,
-gerados com `crypto/rand` (não `math/rand`).
+**Códigos de vale ofuscados.** Alfabeto sem `0/O` e `1/I`, formato `VA-XXXX-XXXX`
+(prefixo configurável via `WIFIC_PREFIXO_VALE`), gerados com `crypto/rand`
+(não `math/rand`).
 
 **Um vale, uma utilização.** A ativação faz `UPDATE ... WHERE estado = 'disponivel'`
 e verifica as linhas afetadas. Dois pedidos simultâneos com o mesmo código: só um
@@ -285,8 +343,9 @@ consegue, o outro recebe "código já utilizado".
 emails existem (timing attack). O token de sessão é opaco, guardado apenas como
 SHA-256 — um dump da base de dados não permite fazer login.
 
-**Proteção contra lockout.** A última conta de dono não pode ser desativada nem
-rebaixada, e trocar a senha invalida as outras sessões.
+**Sem dono, sem privilégios fixos.** Todas as contas ativas têm os mesmos
+direitos. Como salvaguarda, uma conta não pode desativar a própria conta com
+sessão iniciada; trocar a senha invalida as outras sessões.
 
 **Consultas parametrizadas** em todo o lado. A única concatenação de SQL é na
 construção dinâmica de filtros, onde apenas colunas e operadores conhecidos são
@@ -322,22 +381,106 @@ De 5 em 5 minutos o servidor:
 
 Verificado ponta a ponta com o servidor em execução:
 
-- arranque, migrações e dados iniciais (conta de dono + 4 planos);
+- arranque, migrações e primeira conta via API;
 - autenticação, papéis e contas de equipa;
 - planos, geração de vales em lote, validação e **uso único**;
 - autenticação de clientes pelo portal, com velocidade e prazo herdados do plano;
 - redes, utilizadores, portal cativo e análises;
+- dispositivos e telemetria (`PATCH /telemetria` grava todos os campos);
+- servidor RADIUS em UDP a autenticar vales reais;
+- migração `0002` a reconstruir a tabela preservando os dados existentes;
 - manutenção periódica e encerramento gracioso (SIGINT/SIGTERM).
 
 A integração com o router MikroTik está implementada (API REST do RouterOS) e
 desativa-se sozinha quando não há credenciais configuradas.
 
-### Limitação conhecida
+### Testes
 
-O endpoint `PATCH /api/v1/dispositivos/{id}/telemetria` falha com
-`no such column: tempo_actividade` quando o servidor corre sobre a base de dados
-criada pelo mesmo arranque, embora a coluna exista e a mesma instrução funcione
-executada diretamente sobre o ficheiro. O mesmo código, isolado fora do servidor
-de longa duração, funciona corretamente — o problema não está no SQL nem na
-estrutura da tabela. Requer investigação num ambiente com disco e toolchain
-estáveis antes de ser considerado resolvido.
+```bash
+go test ./...
+```
+
+Cobrem o protocolo RADIUS (cifra, timeout, rejeição, lixo em UDP), a integração
+com o pfSense (ARP, alias, Traffic Shaper) e os agregadores de equipamento.
+O módulo `devices` tem testes que documentam o comportamento do driver SQLite
+perante quebras de linha em SQL — a regra que causou um erro enganador.
+
+## Routers suportados
+
+O controlador sabe falar com dois tipos de equipamento:
+
+| Equipamento | Papel | Estado |
+|---|---|---|
+| **MikroTik** | router principal | Implementado |
+| **pfSense** | alternativa, em paralelo | Implementado |
+
+O inventário de dispositivos aceita `router`, `switch`, `ponto_acesso` e
+`firewall`, para que um pfSense seja registado ao lado dos routers MikroTik.
+
+O MikroTik continua a ser o router principal. O pfSense é uma segunda opção
+que entra apenas quando `WIFIC_PFSENSE_ENDERECO` e uma credencial estão
+definidas; sem elas o arranque é idêntico ao de sempre.
+
+Os dois implementam a mesma interface (`LimitadorRede`), e um agregador
+notifica **ambos** em cada desconexão. Se um falhar, o outro continua a ser
+avisado e a sessão é dada como terminada — um router em baixo não pode
+impedir que o outro corte a navegação.
+
+A aplicação da velocidade do plano segue um caminho separado, porque os
+equipamentos não falam a mesma língua: o pfSense limita por endereço IP e o
+MikroTik por endereço MAC. Um agregador traduz o IP da sessão para MAC
+(consultando a tabela ARP) antes de mandar a regra ao router principal.
+A aplicação acontece **depois** de a sessão estar registada: uma falha do
+equipamento deixa o cliente ligado, e só avisa no registo.
+
+### Como o pfSense desliga um cliente
+
+O pfSense não expõe sessões de clientes fora do captive portal, por isso a
+desconexão é feita pela tabela ARP:
+
+1. o endereço MAC é procurado na tabela ARP para obter o IP;
+2. esse IP é removido do alias configurado em `WIFIC_PFSENSE_ALIAS`.
+
+É esse alias — e não o estado interno do firewall — que governa quem navega.
+Sem ele, o arranque avisa e a desconexão falha com uma mensagem explícita.
+
+### Validação de vouchers por RADIUS
+
+O servidor RADIUS escuta em UDP (`WIFIC_RADIUS_PORTA`, 1812 por omissão) e
+implementa o suficiente do RFC 2865 para um pfSense ou MikroTik validar vales:
+
+- descodifica o `Access-Request` e valida a cifra do `User-Password`;
+- consulta o vale na base de dados (o mesmo do portal cativo);
+- responde `Access-Accept` com `Session-Timeout` em segundos — é este valor
+  que faz o firewall desligar o cliente sozinho quando o plano acaba;
+- ou `Access-Reject`, sem mensagem, para não revelar que o vale existe;
+- responde `Accounting-Response` a pedidos de fecho de sessão.
+
+O mapeamento usado é: `User-Name` = endereço MAC do equipamento,
+`User-Password` = código do vale.
+
+O servidor só arranca com `WIFIC_RADIUS_SEGREDO` definido. Sem esse segredo
+partilhado não há forma de validar um pedido, e abrir a porta 1812 seria apenas
+uma superfície de ataque — por isso fica desligado e o portal cativo continua a
+funcionar normalmente. O segredo tem de ser **igual** ao configurado no router:
+se divergirem, a senha não se descodifica e o acesso é recusado, mas o motivo
+não é óbvio do lado do router.
+
+Para testar contra um servidor a correr, existe uma sonda independente:
+
+```bash
+go run ./cmd/radiusprobe \
+  -endereco 127.0.0.1:1812 \
+  -segredo 'segredo-partilhado' \
+  -utilizador DC:A6:32:01:77:2E \
+  -vale VA-XXXX-XXXX
+```
+
+Devolve `Access-Accept` com o `Session-Timeout`, ou `Access-Reject`.
+
+### Limitação conhecida — accounting sem persistência
+
+O `Accounting-Request` é aceite e respondido, mas os octetos e o tempo
+consumidos **não são gravados**. A cobrança pelo uso real depende de o
+`dados_mb` das sessões passar a ser preenchido. O plano tem `limite_dados_mb`,
+mas nada o aplica hoje ao consumo.

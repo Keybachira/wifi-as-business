@@ -90,7 +90,7 @@ export function AreaChart({
       <svg
         viewBox={`0 0 ${w} ${h}`}
         role="img"
-        aria-label="Bandwidth usage over 24 hours"
+        aria-label="Uso de banda nas últimas 24 horas"
       >
         {[0, 0.5, 1].map((t) => (
           <g key={t}>
@@ -155,7 +155,7 @@ export function AreaChart({
           }}
         >
           <strong>{d.hour}</strong>
-          <div>Download {d.download} Mbps</div>
+          <div>Descarga {d.download} Mbps</div>
           <div>Upload {d.upload} Mbps</div>
         </div>
       )}
@@ -175,7 +175,7 @@ export function Bars({
   const h = 180;
   const bw = (w - 40) / values.length - 6;
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} role="img" aria-label="Users per hour">
+    <svg viewBox={`0 0 ${w} ${h}`} role="img" aria-label="Utilizadores por hora">
       {values.map((v, i) => {
         const bh = (v / max) * (h - 40);
         return (
@@ -396,7 +396,7 @@ export function CommandMenu({
       >
         <input
           autoFocus
-          placeholder="Search pages, users, vouchers…"
+          placeholder="Pesquisar páginas, utilizadores, vales…"
           value={q}
           onChange={(e) => {
             setQ(e.target.value);
@@ -406,7 +406,7 @@ export function CommandMenu({
         <div className="cmd-list">
           {filtered.length === 0 && (
             <div className="empty" style={{ padding: 24 }}>
-              No results
+              Sem resultados
             </div>
           )}
           {filtered.map((item, i) => (

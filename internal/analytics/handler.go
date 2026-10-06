@@ -50,11 +50,11 @@ func (s *Serviço) Painel(ctx context.Context, duracao time.Duration) (map[strin
 	}
 
 	return map[string]any{
-		"resumo":         resumo,
-		"utilizadores_hora": porHora,
-		"banda_hora":     banda,
-		"por_plano":      porPlano,
-		"por_dispositivo": porDispositivo,
+		"resumo":                  resumo,
+		"utilizadores_hora":       porHora,
+		"banda_hora":              banda,
+		"por_plano":               porPlano,
+		"por_dispositivo":         porDispositivo,
 		"principais_utilizadores": top,
 		"intervalo": map[string]any{
 			"de":  intervalo.De,

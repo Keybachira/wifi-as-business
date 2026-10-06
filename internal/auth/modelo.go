@@ -7,11 +7,12 @@ import (
 	"unicode"
 )
 
-// Papel define o nível de permissão de uma conta.
+// Papel é o nível de permissão de uma conta. O sistema é genérico: não há
+// dono. Todos os papeis têm os mesmos direitos; o campo existe para
+// rotular contas (ex.: operador, suporte) e nada mais.
 type Papel string
 
 const (
-	PapelDono     Papel = "dono"
 	PapelOperador Papel = "operador"
 	PapelSuporte  Papel = "suporte"
 )
@@ -35,27 +36,29 @@ type Conta struct {
 }
 
 // PodeEditarValores indica se a conta pode criar/alterar planos e definições.
-func (c Conta) PodeEditarValores() bool { return c.Papel == PapelDono || c.Papel == PapelOperador }
+// Sistema genérico: qualquer conta ativa pode.
+func (c Conta) PodeEditarValores() bool { return true }
 
 // PodeGerirContas indica se a conta pode administrar outras contas.
-func (c Conta) PodeGerirContas() bool { return c.Papel == PapelDono }
+// Sistema genérico, sem dono: qualquer conta ativa pode.
+func (c Conta) PodeGerirContas() bool { return true }
 
 // EstaAtiva indica se a conta pode iniciar sessão.
 func (c Conta) EstaAtiva() bool { return c.Estado == EstadoAtivo }
 
 // Credenciais são os dados de entrada do formulário de login.
 type Credenciais struct {
-	Email    string `json:"email"`
-	Senha    string `json:"senha"`
+	Email string `json:"email"`
+	Senha string `json:"senha"`
 }
 
 // CriarConta são os dados para registar uma nova conta.
 type CriarConta struct {
-	Nome    string `json:"nome"`
-	Email   string `json:"email"`
-	Senha   string `json:"senha"`
-	Papel   Papel  `json:"apel"`
-	Ativo   *bool  `json:"ativo,omitempty"`
+	Nome  string `json:"nome"`
+	Email string `json:"email"`
+	Senha string `json:"senha"`
+	Papel Papel  `json:"papel"`
+	Ativo *bool  `json:"ativo,omitempty"`
 }
 
 // Validar normaliza e valida os dados de criação de conta.
@@ -86,7 +89,7 @@ func (c *CriarConta) Validar() error {
 
 func (c CriarConta) PapelValido() bool {
 	switch c.Papel {
-	case PapelDono, PapelOperador, PapelSuporte:
+	case PapelOperador, PapelSuporte:
 		return true
 	}
 	return false
@@ -115,12 +118,12 @@ func emailValido(email string) bool {
 
 // RequisitosSenha descreve os critérios mínimos de uma senha aceite.
 type RequisitosSenha struct {
-	MinimoCaracteres int `json:"minimo_caracteres"`
-	ExigirMaiuscula bool `json:"exigir_maiuscula"`
-	ExigirNumero    bool `json:"exigir_numero"`
+	MinimoCaracteres int  `json:"minimo_caracteres"`
+	ExigirMaiuscula  bool `json:"exigir_maiuscula"`
+	ExigirNumero     bool `json:"exigir_numero"`
 }
 
-//RequisitosPadrao é a política de senhas aplicada ao sistema.
+// RequisitosPadrao é a política de senhas aplicada ao sistema.
 var RequisitosPadrao = RequisitosSenha{MinimoCaracteres: 8, ExigirMaiuscula: true, ExigirNumero: true}
 
 // ValidarSenha verifica a senha contra a política configurada.

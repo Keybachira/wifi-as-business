@@ -48,21 +48,23 @@ func NovoRepoPlanos(db *sql.DB) RepoPlanos { return repoPlanosSQLite{db: db} }
 // ResultadoGeracao devolve os vales criados num lote.
 type ResultadoGeracao struct {
 	Quantidade int      `json:"quantidade"`
-	Codigos     []string `json:"codigos"`
-	PlanoID     int64    `json:"plano_id"`
-	ExpiraEm    string   `json:"expira_em"`
+	Codigos    []string `json:"codigos"`
+	PlanoID    int64    `json:"plano_id"`
+	ExpiraEm   string   `json:"expira_em"`
 }
 
 // Serviço contém a lógica de negócio dos vales.
 type Serviço struct {
-	repo     *Repositorio
-	planos   RepoPlanos
-	registo  *slog.Logger
+	repo    *Repositorio
+	planos  RepoPlanos
+	registo *slog.Logger
+	prefixo string
 }
 
 // NovoServico cria o serviço de vales.
-func NovoServico(repo *Repositorio, planos RepoPlanos, registo *slog.Logger) *Serviço {
-	return &Serviço{repo: repo, planos: planos, registo: registo}
+// prefixoVale é o prefixo dos códigos gerados (configurável; vazio = "VA").
+func NovoServico(repo *Repositorio, planos RepoPlanos, registo *slog.Logger, prefixoVale string) *Serviço {
+	return &Serviço{repo: repo, planos: planos, registo: registo, prefixo: prefixoVale}
 }
 
 // Listar devolve os vales e o total encontrado.
@@ -97,7 +99,11 @@ func (s *Serviço) Gerar(ctx context.Context, lote GerarLote) (ResultadoGeracao,
 	tentativas := lote.Quantidade * 3
 	for len(codigos) < lote.Quantidade && tentativas > 0 {
 		tentativas--
-		codigo, err := GerarCodigo(lote.Prefixo)
+		prefixo := lote.Prefixo
+		if prefixo == "" {
+			prefixo = s.prefixo
+		}
+		codigo, err := GerarCodigo(prefixo)
 		if err != nil {
 			return ResultadoGeracao{}, err
 		}

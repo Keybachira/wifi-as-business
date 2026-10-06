@@ -117,14 +117,6 @@ func (r *Repositorio) RegistarAcesso(ctx context.Context, id int64, quando time.
 	return err
 }
 
-// ContarDonos devolve quantas contas com papel de dono existem (proteção contra lockout).
-func (r *Repositorio) ContarDonos(ctx context.Context) (int, error) {
-	var total int
-	err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM contas WHERE papel = ? AND estado = ?`,
-		string(PapelDono), EstadoAtivo).Scan(&total)
-	return total, err
-}
-
 // Existe devolve true se existir alguma conta (usado no arranque para criar a primeira).
 func (r *Repositorio) Existe(ctx context.Context) (bool, error) {
 	var total int
@@ -137,7 +129,7 @@ func (r *Repositorio) Existe(ctx context.Context) (bool, error) {
 // Erros de domínio do módulo de autenticação.
 var (
 	ErrContaNaoEncontrada = errors.New("conta não encontrada")
-	ErrEmailEmUso        = errors.New("este email já está registado")
+	ErrEmailEmUso         = errors.New("este email já está registado")
 )
 
 // linhaScanner abstrai *sql.Row e *sql.Rows para a leitura de uma conta.
