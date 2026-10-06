@@ -1,34 +1,53 @@
-# Artefactos de compilacao
+# --- Compilacao e binarios ---
 /wificontroller
 /wificontroller.exe
+/cob.exe
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
+*.test
+*.test.exe
+*.out
 
-# Base de dados local
+# --- Pasta de distribuicao (gerada, copiar para pen) ---
+/distribuicao/
+
+# --- Base de dados local ---
 /data/*.db
 /data/*.db-wal
 /data/*.db-shm
 
-# Configuracao local (pode conter segredos)
+# --- Configuracao local (pode conter segredos) ---
 /config/.env
 /config/config.env
+/.env
 
-# Logs
+# --- Instalador: binarios e toolchains (regenerados com descarregar-cache.sh) ---
+/instalador/binarios/
+/instalador/cache/
+
+# --- Logs e artefactos de execucao ---
 *.log
+*.pid
 
-# Frontend
+# --- Frontend ---
 /web/frontend/node_modules/
 /web/frontend/dist/
 /web/frontend/.vite/
 /web/frontend/*.local
 *.tsbuildinfo
 
-# Sistema operativo / editores
+# --- Ferramentas locais ---
+.freebuff/
+
+# --- Sistema operativo / editores ---
 .DS_Store
 Thumbs.db
 .idea/
 .vscode/
 *.swp
+*.swo
+*~
+._*
